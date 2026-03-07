@@ -1,0 +1,26 @@
+# Mock dependency graph — maps operationId to downstream consumers
+# Used by impact_analyze tool
+createAccount:
+  - service: onboarding-service
+    team: customer-onboarding
+    severity: HIGH
+  - service: crm-integration
+    team: sales-ops
+    severity: HIGH
+  - service: mobile-app-backend
+    team: mobile
+    severity: HIGH
+listAccounts:
+  - service: reporting-service
+    team: finance
+    severity: MEDIUM
+  - service: admin-portal
+    team: ops
+    severity: LOW
+listTransactions:
+  - service: reporting-service
+    team: finance
+    severity: HIGH
+  - service: audit-trail-service
+    team: compliance
+    severity: HIGH

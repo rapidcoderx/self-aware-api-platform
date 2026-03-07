@@ -1,0 +1,32 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+.DS_Store
+
+# Logs
+*.log
+bootstrap.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# DB
+*.sql.bak

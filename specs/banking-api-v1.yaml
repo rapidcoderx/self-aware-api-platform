@@ -1,0 +1,85 @@
+openapi: 3.0.3
+info:
+  title: Banking API
+  version: 1.0.0
+  description: Core banking operations API
+paths:
+  /accounts:
+    post:
+      operationId: createAccount
+      summary: Create a new bank account
+      tags: [accounts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountName, accountType]
+              properties:
+                accountName:
+                  type: string
+                  example: "Acme Corp Operating Account"
+                accountType:
+                  type: string
+                  enum: [savings, current, deposit]
+                  example: current
+                currency:
+                  type: string
+                  default: CAD
+                  example: CAD
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId: { type: string }
+                  status:    { type: string }
+    get:
+      operationId: listAccounts
+      summary: List all accounts
+      tags: [accounts]
+      parameters:
+        - name: accountType
+          in: query
+          schema: { type: string, enum: [savings, current, deposit] }
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    accountId:   { type: string }
+                    accountName: { type: string }
+                    accountType: { type: string }
+  /accounts/{accountId}/transactions:
+    get:
+      operationId: listTransactions
+      summary: List transactions for an account
+      tags: [transactions]
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    transactionId: { type: string }
+                    amount:        { type: number }
+                    currency:      { type: string }
+                    date:          { type: string, format: date }
