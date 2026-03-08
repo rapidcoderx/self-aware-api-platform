@@ -2,11 +2,8 @@
 name: run-phase-tests
 description: Run the exit gate test suite for a given build phase (phase1, phase2, ...). Every check must show ✅ PASS before advancing to the next phase.
 agent: API Platform Builder
+argument-hint: "phase1 | phase2 | phase3 — runs backend/tests/test_<phase>.py"
 tools: ['runCommands', 'codebase', 'search']
-arguments:
-  - name: phase
-    description: "Which phase to test — e.g. phase1, phase2, phase3. Matches backend/tests/test_<phase>.py"
-    required: true
 ---
 
 Run the exit gate test suite for **${{ phase }}**.
