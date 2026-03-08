@@ -1,0 +1,112 @@
+# Self-Aware API Platform — Cursor Rules
+
+## Project context
+48-hour hackathon: agentic API intelligence platform.
+Tool-first architecture. MCP tools are the execution layer. Claude API is the brain.
+Goal: working demo, not perfect code.
+
+## Non-negotiable stack
+- Python 3.12.12 (uv-managed venv at backend/.venv)
+- FastAPI + uvicorn (async throughout)
+- Anthropic SDK — model claude-sonnet-4-20250514 — tool_use loop
+- MCP Python SDK — stdio transport
+- pgvector in PostgreSQL 16 — selfaware_api DB on localhost:5432
+- Voyage AI — voyage-3 — dim=1024
+- prance + jsonschema for OpenAPI work
+- React 18 + Vite 5 + Tailwind CSS 3
+- Prism mock server on port 4010
+
+## Python style rules
+- Type hints on every function signature — no exceptions
+- Pydantic v2 for all data models (use model_config, not class Config)
+- async/await throughout — no sync DB calls in route handlers
+- Raw psycopg2 — no ORM. Parameterised queries only (%s placeholders)
+- python-dotenv for all config — no hardcoded values
+- logging module only — no print() statements
+- One module per tool — keep files under 150 lines where possible
+
+## FastAPI rules
+- Always define response_model on routes
+- Always set status_code on POST routes (201 for creates)
+- Use Depends() for DB connection injection
+- Prefix all API routes with /api
+
+## Agent rules
+- tool_use loop max 10 iterations — always guard against infinite loops
+- Always append tool results back to messages before next Claude call
+- System prompt must include: provenance instruction + sandbox notice
+- Never call external APIs directly from agent — only via MCP tools
+
+## React/Tailwind rules
+- Functional components only — no class components
+- useState/useEffect hooks — no Redux or external state managers
+- axios for all HTTP — no fetch()
+- Tailwind utility classes only — no custom CSS files
+- Dark navy header (#1A3A5C), accent blue (#2E86AB) for branding
+
+## What Cursor must never suggest
+- LangChain, LangGraph, CrewAI, AutoGen — not in this project
+- OpenAI or any other LLM — Anthropic only
+- Chroma, Pinecone, Weaviate — pgvector only
+- SQLAlchemy — raw psycopg2 only
+- Next.js — Vite only
+- Installing packages with pip — always uv pip install
+
+## File placement
+- New Python modules → backend/tools/, backend/ingestion/, backend/storage/
+- New React components → frontend/src/components/
+- New API routes → backend/main.py (or imported router)
+- Config changes → backend/.env (never commit)
+
+## Patterns to reuse (copy these, don't reinvent)
+
+### DB connection
+```python
+import psycopg2, os
+from dotenv import load_dotenv
+load_dotenv()
+
+def get_db():
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+    try:
+        yield conn
+    finally:
+        conn.close()
+```
+
+### Voyage AI embed
+```python
+import voyageai, os
+_voyage = voyageai.Client(api_key=os.getenv("VOYAGE_API_KEY"))
+
+def embed(texts: list[str]) -> list[list[float]]:
+    return _voyage.embed(texts, model="voyage-3").embeddings
+```
+
+### Audit log insert
+```python
+def log_tool_call(conn, tool_name, inputs, outputs, spec_id=None, duration_ms=None):
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO audit_logs (tool_name, inputs, outputs, spec_id, duration_ms)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (tool_name, json.dumps(inputs), json.dumps(outputs), spec_id, duration_ms))
+    conn.commit()
+```
+
+### Breaking change classification
+```python
+def classify_change(field: str, old_schema: dict, new_schema: dict,
+                    old_required: list, new_required: list) -> str:
+    if field not in old_schema and field in new_required:
+        return "BREAKING"   # new required field
+    if field in old_schema and field not in new_schema:
+        return "BREAKING"   # field removed
+    if old_schema.get(field, {}).get("type") != new_schema.get(field, {}).get("type"):
+        return "BREAKING"   # type changed
+    old_enum = old_schema.get(field, {}).get("enum", [])
+    new_enum = new_schema.get(field, {}).get("enum", [])
+    if old_enum and set(old_enum) - set(new_enum):
+        return "BREAKING"   # enum values removed
+    return "NON_BREAKING"
+```
