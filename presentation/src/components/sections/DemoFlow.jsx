@@ -1,20 +1,16 @@
-import { motion } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
 import SectionHeader from '../ui/SectionHeader'
 import Badge from '../ui/Badge'
 
 const STEP_FLOW = ['Question', 'spec.search', 'spec.get', 'spec.validate', '✓ Valid']
 
 export default function DemoFlow() {
-  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.05 })
   return (
     <section id="demo-flow" className="relative min-h-screen z-10 py-24 px-6 md:px-12 lg:px-24">
-      <div className="max-w-7xl mx-auto" ref={ref}>
+      <div className="max-w-7xl mx-auto">
         <SectionHeader title="Three Demos · Four Minutes" tag="// LIVE DEMO" />
         <div className="space-y-10">
           {/* Demo 1 */}
-          <motion.div initial={{ opacity: 0, x: -40 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.6 }}
-            className="glass rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 hover:border-accent-primary/40 transition-all">
+          <div className="glass rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 hover:border-accent-primary/40 transition-colors duration-200">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-4"><span className="text-3xl">🔭</span><Badge label="DEMO 1" variant="cyan" /></div>
               <h3 className="font-display font-bold text-star-white text-2xl mb-3">Discover &amp; Validate</h3>
@@ -26,17 +22,16 @@ export default function DemoFlow() {
               <div className="flex flex-wrap items-center gap-1">
                 {STEP_FLOW.map((s, i) => (
                   <div key={s} className="flex items-center">
-                    <span className={`font-mono text-xs px-2 py-1 rounded-lg ${s.startsWith('✓') ? 'bg-accent-green/20 text-accent-green' : 'bg-accent-primary/10 text-accent-primary'}`}>{s}</span>
+                    <span className={'font-mono text-xs px-2 py-1 rounded-lg ' + (s.startsWith('✓') ? 'bg-accent-green/20 text-accent-green' : 'bg-accent-primary/10 text-accent-primary')}>{s}</span>
                     {i < STEP_FLOW.length - 1 && <span className="text-accent-primary/40 mx-1 text-xs">→</span>}
                   </div>
                 ))}
               </div>
               <p className="font-mono text-accent-primary/40 text-xs mt-3">Duration: ~90 sec</p>
             </div>
-          </motion.div>
+          </div>
           {/* Demo 2 */}
-          <motion.div initial={{ opacity: 0, x: 40 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.6, delay: 0.15 }}
-            className="glass rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 border-l-4 border-l-accent-red/60 hover:border-l-accent-red transition-all">
+          <div className="glass rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 border-l-4 border-l-accent-red/60 hover:border-l-accent-red transition-colors duration-200">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-4"><span className="text-3xl">⚠️</span><Badge label="DEMO 2" variant="red" /></div>
               <h3 className="font-display font-bold text-star-white text-2xl mb-3">Breaking Change Detected</h3>
@@ -55,10 +50,9 @@ export default function DemoFlow() {
               </pre>
               <p className="font-mono text-accent-primary/40 text-xs mt-3">Duration: ~60 sec</p>
             </div>
-          </motion.div>
+          </div>
           {/* Demo 3 */}
-          <motion.div initial={{ opacity: 0, x: -40 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.6, delay: 0.3 }}
-            className="glass rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 border-l-4 border-l-accent-green/60 hover:border-l-accent-green transition-all">
+          <div className="glass rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 border-l-4 border-l-accent-green/60 hover:border-l-accent-green transition-colors duration-200">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-4"><span className="text-3xl">🛠</span><Badge label="DEMO 3" variant="green" /></div>
               <h3 className="font-display font-bold text-star-white text-2xl mb-3">Self-Heal</h3>
@@ -75,7 +69,7 @@ export default function DemoFlow() {
               <pre className="font-mono text-xs bg-black/60 border border-accent-green/20 rounded-xl p-4 leading-relaxed text-accent-green/80">{`// Migration: createAccount payload\n// Add required field:\n+ companyRegistrationNumber: "REG-001"\n\n// Update enum value:\n- accountType: "deposit"\n+ accountType: "corporate"\n\n// Validation: PASS ✓`}</pre>
               <p className="font-mono text-accent-primary/40 text-xs mt-3">Duration: ~60 sec</p>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

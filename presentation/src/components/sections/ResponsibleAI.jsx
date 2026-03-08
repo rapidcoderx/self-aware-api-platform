@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
 import SectionHeader from '../ui/SectionHeader'
 
 const PRINCIPLES = [
@@ -12,25 +10,23 @@ const PRINCIPLES = [
 ]
 
 export default function ResponsibleAI() {
-  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.05 })
   return (
     <section id="responsible-ai" className="relative min-h-screen z-10 py-24 px-6 md:px-12 lg:px-24">
-      <div className="max-w-7xl mx-auto" ref={ref}>
+      <div className="max-w-7xl mx-auto">
         <SectionHeader title="Responsible AI" tag="// GUARDRAILS" subtitle="Built in, not bolted on." />
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-16">
-          {PRINCIPLES.map((p, i) => (
-            <motion.div key={p.label} initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={inView ? { opacity: 1, scale: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: i * 0.1 }}
-              whileHover={{ scale: 1.03, boxShadow: '0 0 30px rgba(0,212,255,0.25)' }} className="glass rounded-2xl p-6 text-center group transition-all duration-300 hover:border-accent-primary/50">
+          {PRINCIPLES.map((p) => (
+            <div key={p.label}
+              className="glass rounded-2xl p-6 text-center transition-colors duration-200 hover:border-accent-primary/50">
               <div className="text-3xl mb-3">{p.icon}</div>
               <h3 className="font-display font-bold text-star-white text-sm mb-2">{p.label}</h3>
               <p className="font-body text-star-blue/70 text-xs leading-relaxed">{p.desc}</p>
-            </motion.div>
+            </div>
           ))}
         </div>
-        <motion.p initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.7 }}
-          className="font-body italic text-star-blue/70 text-center text-lg max-w-2xl mx-auto">
+        <p className="font-body italic text-star-blue/70 text-center text-lg max-w-2xl mx-auto">
           "This is not AI safety theatre. These are architectural constraints."
-        </motion.p>
+        </p>
       </div>
     </section>
   )

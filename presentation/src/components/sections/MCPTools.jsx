@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
 import SectionHeader from '../ui/SectionHeader'
 import Badge from '../ui/Badge'
 
@@ -14,15 +12,14 @@ const TOOLS = [
 
 export default function MCPTools() {
   const [expanded, setExpanded] = useState(null)
-  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.05 })
   return (
     <section id="mcp-tools" className="relative min-h-screen z-10 py-24 px-6 md:px-12 lg:px-24">
       <div className="max-w-7xl mx-auto">
         <SectionHeader title="MCP Tool Contract" tag="// TOOLING" subtitle="Five narrow, typed, auditable tools. The agent orchestrates. Tools execute." />
-        <div ref={ref} className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
           {TOOLS.map((tool, i) => (
-            <motion.div key={tool.num} initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: i * 0.1 }}
-              className={`glass rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 ${expanded === i ? 'border-accent-primary/50 shadow-glow-cyan' : 'hover:border-accent-primary/30'}`}
+            <div key={tool.num}
+              className={'glass rounded-2xl overflow-hidden cursor-pointer transition-colors duration-200 ' + (expanded === i ? 'border-accent-primary/50 shadow-glow-cyan' : 'hover:border-accent-primary/30')}
               onClick={() => setExpanded(expanded === i ? null : i)}>
               <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -34,20 +31,16 @@ export default function MCPTools() {
                 <p className="font-body text-star-blue text-xs leading-relaxed mb-3">{tool.desc}</p>
                 <Badge label={tool.ret} variant={tool.retVariant} />
               </div>
-              <AnimatePresence>
-                {expanded === i && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="overflow-hidden border-t border-accent-primary/15">
-                    <pre className="font-mono text-accent-green/80 text-xs p-4 bg-black/40 whitespace-pre-wrap">{tool.snippet}</pre>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+              <div className="overflow-hidden border-t border-accent-primary/15 transition-all duration-200"
+                style={{ maxHeight: expanded === i ? '200px' : 0, opacity: expanded === i ? 1 : 0 }}>
+                <pre className="font-mono text-accent-green/80 text-xs p-4 bg-black/40 whitespace-pre-wrap">{tool.snippet}</pre>
+              </div>
+            </div>
           ))}
         </div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.6 }}
-          className="glass rounded-2xl border-accent-primary/30 p-6 text-center" style={{ boxShadow: '0 0 30px rgba(0,212,255,0.08)' }}>
+        <div className="glass rounded-2xl border-accent-primary/30 p-6 text-center" style={{ boxShadow: '0 0 30px rgba(0,212,255,0.08)' }}>
           <p className="font-mono text-accent-primary text-sm">"Tools are narrow, typed, and auditable. The agent orchestrates. Tools execute."</p>
-        </motion.div>
+        </div>
       </div>
     </section>
   )

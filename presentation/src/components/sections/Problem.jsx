@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
 import SectionHeader from '../ui/SectionHeader'
 
 const PROBLEMS = [
@@ -10,15 +8,14 @@ const PROBLEMS = [
 ]
 
 export default function Problem() {
-  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 })
   return (
     <section id="problem" className="relative min-h-screen z-10 py-24 px-6 md:px-12 lg:px-24">
       <div className="max-w-7xl mx-auto">
         <SectionHeader title="The Problem" tag="// CONTEXT" />
-        <div ref={ref} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {PROBLEMS.map((p, i) => (
-            <motion.div key={p.num} initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: i * 0.15 }}
-              whileHover={{ y: -4 }} className="glass rounded-2xl p-6 border-l-4 border-l-accent-red/60 hover:border-l-accent-red hover:shadow-[0_0_30px_rgba(255,71,87,0.2)] transition-all duration-300">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {PROBLEMS.map((p) => (
+            <div key={p.num}
+              className="glass rounded-2xl p-6 border-l-4 border-l-accent-red/60 hover:border-l-accent-red hover:shadow-[0_0_30px_rgba(255,71,87,0.18)] transition-all duration-200">
               <div className="flex items-start gap-4">
                 <span className="text-3xl flex-shrink-0">{p.icon}</span>
                 <div>
@@ -29,7 +26,7 @@ export default function Problem() {
                   <p className="font-body text-star-blue text-sm leading-relaxed">{p.desc}</p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

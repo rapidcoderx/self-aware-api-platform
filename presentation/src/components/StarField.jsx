@@ -1,88 +1,94 @@
-import { useEffect, useRef } from 'react'
+// Stars are rendered as CSS box-shadow on a single 1px element — one GPU layer,
+// zero JS after mount, zero rAF. Glows are opacity-only CSS animations which run
+// entirely on the compositor thread (no paint or layout) — safe for Intel + Firefox.
+
+// Deterministic pseudo-random so SSR/hydration is stable
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed)
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t
+    return ((t ^ t >>> 14) >>> 0) / 4294967296
+  }
+}
+
+function buildStars(count, w, h, seed) {
+  const rand = mulberry32(seed)
+  const colors = ['248,250,255', '168,216,240', '255,215,0']
+  return Array.from({ length: count }, () => {
+    const x = Math.floor(rand() * w)
+    const y = Math.floor(rand() * h)
+    const r = (rand() * 1.4 + 0.4).toFixed(1)
+    const a = (rand() * 0.55 + 0.18).toFixed(2)
+    const c = colors[Math.floor(rand() * colors.length)]
+    return `${x}px ${y}px 0 ${r}px rgba(${c},${a})`
+  }).join(',')
+}
+
+// 14 glow spots: position (%), animation duration, delay, color
+const GLOWS = [
+  { x:  8, y: 12, d: 5.1, del: 0.0, c: '0,212,255',   s: 180 },
+  { x: 22, y: 68, d: 7.3, del: 1.4, c: '168,216,240', s: 120 },
+  { x: 37, y: 28, d: 4.8, del: 2.7, c: '255,215,0',   s: 90  },
+  { x: 51, y: 82, d: 6.2, del: 0.8, c: '0,212,255',   s: 150 },
+  { x: 63, y: 14, d: 8.5, del: 3.2, c: '124,58,237',  s: 200 },
+  { x: 74, y: 55, d: 5.9, del: 1.9, c: '168,216,240', s: 110 },
+  { x: 85, y: 33, d: 4.4, del: 0.5, c: '0,212,255',   s: 160 },
+  { x: 91, y: 77, d: 7.1, del: 2.3, c: '255,215,0',   s: 80  },
+  { x: 15, y: 90, d: 6.6, del: 1.1, c: '124,58,237',  s: 130 },
+  { x: 44, y: 50, d: 9.0, del: 4.0, c: '0,212,255',   s: 220 },
+  { x: 58, y: 95, d: 5.5, del: 0.3, c: '168,216,240', s: 100 },
+  { x: 30, y: 42, d: 7.8, del: 3.6, c: '255,215,0',   s: 75  },
+  { x: 78, y: 8,  d: 4.2, del: 2.0, c: '0,212,255',   s: 140 },
+  { x: 96, y: 60, d: 6.9, del: 1.7, c: '124,58,237',  s: 190 },
+]
+
+const STAR_SHADOW = buildStars(260, 1920, 1080, 0xDEADBEEF)
 
 export default function StarField() {
-  const canvasRef = useRef(null)
-  const mouseRef = useRef({ x: 0, y: 0 })
-  const frameRef = useRef(null)
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden>
+      {/* Ambient nebula gradients */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: [
+          'radial-gradient(ellipse 700px 600px at 15% 25%, rgba(0,212,255,0.05) 0%, transparent 100%)',
+          'radial-gradient(ellipse 900px 700px at 85% 75%, rgba(124,58,237,0.05) 0%, transparent 100%)',
+          'radial-gradient(ellipse 500px 400px at 50% 8%,  rgba(255,215,0,0.02) 0%, transparent 100%)',
+        ].join(',')
+      }} />
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    let W = window.innerWidth
-    let H = window.innerHeight
-    canvas.width = W
-    canvas.height = H
+      {/* Static star field — single element, one composited layer */}
+      <div style={{
+        position: 'absolute', width: 1, height: 1,
+        top: 0, left: 0,
+        boxShadow: STAR_SHADOW,
+        borderRadius: '50%',
+        background: 'transparent',
+      }} />
 
-    const STAR_COUNT = 220
-    const stars = Array.from({ length: STAR_COUNT }, () => {
-      const rand = Math.random()
-      const color = rand < 0.7 ? '#F8FAFF' : rand < 0.9 ? '#A8D8F0' : '#FFD700'
-      return {
-        x: Math.random() * W, y: Math.random() * H, baseX: 0, baseY: 0,
-        radius: 0.5 + Math.random() * 2, opacity: 0.3 + Math.random() * 0.7,
-        speed: 0.3 + Math.random() * 1.2, phase: Math.random() * Math.PI * 2,
-        color, parallaxFactor: 0.2 + Math.random() * 0.8,
-      }
-    })
-    stars.forEach(s => { s.baseX = s.x; s.baseY = s.y })
+      {/* Glow spots — opacity-only animation, compositor thread only */}
+      {GLOWS.map((g, idx) => (
+        <div key={idx} style={{
+          position: 'absolute',
+          left: g.x + '%',
+          top:  g.y + '%',
+          width:  g.s + 'px',
+          height: g.s + 'px',
+          borderRadius: '50%',
+          background: `radial-gradient(circle, rgba(${g.c},0.22) 0%, transparent 70%)`,
+          opacity: 0,
+          animation: `starGlow ${g.d}s ease-in-out ${g.del}s infinite`,
+          transform: 'translate(-50%, -50%)',
+        }} />
+      ))}
 
-    const shots = Array.from({ length: 5 }, (_, i) => ({
-      active: false, x: 0, y: 0, vx: 0, vy: 0,
-      opacity: 0, timer: i * 1600, delay: 8000 + Math.random() * 6000,
-      life: 0, maxLife: 60,
-    }))
-
-    const resetShot = (s) => {
-      s.x = Math.random() * W * 0.6; s.y = Math.random() * H * 0.3
-      const angle = Math.PI / 6 + Math.random() * (Math.PI / 4)
-      const spd = 6 + Math.random() * 8
-      s.vx = Math.cos(angle) * spd; s.vy = Math.sin(angle) * spd
-      s.opacity = 0; s.active = true; s.life = 0; s.maxLife = 60
-    }
-
-    let t0 = null
-    const draw = (ts) => {
-      if (!t0) t0 = ts
-      const elapsed = (ts - t0) / 1000
-      ctx.clearRect(0, 0, W, H)
-      const mx = mouseRef.current.x / W - 0.5
-      const my = mouseRef.current.y / H - 0.5
-      stars.forEach(s => {
-        const tw = 0.5 + 0.5 * Math.sin(elapsed * s.speed + s.phase)
-        const alpha = s.opacity * (0.4 + 0.6 * tw)
-        const px = s.baseX + mx * 8 * s.parallaxFactor
-        const py = s.baseY + my * 8 * s.parallaxFactor
-        const r = parseInt(s.color.slice(1,3),16)
-        const g = parseInt(s.color.slice(3,5),16)
-        const b = parseInt(s.color.slice(5,7),16)
-        ctx.beginPath(); ctx.arc(px, py, s.radius, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`; ctx.fill()
-      })
-      shots.forEach(s => {
-        s.timer += 16
-        if (!s.active) { if (s.timer > s.delay) { s.timer = 0; s.delay = 6000 + Math.random() * 8000; resetShot(s) } return }
-        s.life++
-        s.opacity = s.life < 10 ? s.life / 10 : s.life > s.maxLife - 10 ? (s.maxLife - s.life) / 10 : 1
-        ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * 12, s.y - s.vy * 12)
-        const g2 = ctx.createLinearGradient(s.x, s.y, s.x - s.vx * 12, s.y - s.vy * 12)
-        g2.addColorStop(0, `rgba(255,255,255,${s.opacity})`); g2.addColorStop(1, 'rgba(255,255,255,0)')
-        ctx.strokeStyle = g2; ctx.lineWidth = 2; ctx.stroke()
-        s.x += s.vx; s.y += s.vy
-        if (s.life >= s.maxLife || s.x > W || s.y > H) { s.active = false; s.timer = 0 }
-      })
-      frameRef.current = requestAnimationFrame(draw)
-    }
-    frameRef.current = requestAnimationFrame(draw)
-
-    const onResize = () => {
-      W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H
-      stars.forEach(s => { s.baseX = Math.random() * W; s.baseY = Math.random() * H; s.x = s.baseX; s.y = s.baseY })
-    }
-    const onMouse = (e) => { mouseRef.current = { x: e.clientX, y: e.clientY } }
-    window.addEventListener('resize', onResize)
-    window.addEventListener('mousemove', onMouse)
-    return () => { cancelAnimationFrame(frameRef.current); window.removeEventListener('resize', onResize); window.removeEventListener('mousemove', onMouse) }
-  }, [])
-
-  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" style={{ willChange: 'transform' }} />
+      <style>{`
+        @keyframes starGlow {
+          0%, 100% { opacity: 0; }
+          45%, 55%  { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  )
 }
