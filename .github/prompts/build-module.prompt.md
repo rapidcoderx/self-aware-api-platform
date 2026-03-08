@@ -2,7 +2,7 @@
 name: build-module
 description: Generate a complete, runnable module for the Self-Aware API Platform. Provide the module name and it produces a full implementation with no placeholders.
 agent: API Platform Builder
-tools: ['editFiles', 'codebase', 'runCommands', 'problems']
+tools: ['edit/editFiles', 'search/codebase', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read/terminalLastCommand', 'read/terminalSelection', 'read/problems']
 argument-hint: 'Which module? e.g. tools/spec_search.py, ingestion/normalizer.py, agent.py'
 ---
 
@@ -67,7 +67,7 @@ async def tool_name(param: type, ...) -> ReturnModel:
 - Show error state if API fails
 
 ## After writing the code
-1. Run the file with `#tool:runCommands` to confirm it imports cleanly:
+1. Run the file with `#tool:execute/runInTerminal` and `#tool:execute/getTerminalOutput` to confirm it imports cleanly:
    ```bash
    cd ~/self-aware-api-platform/backend && source .venv/bin/activate && python -c "import [module]"
    ```

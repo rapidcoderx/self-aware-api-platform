@@ -2,7 +2,7 @@
 name: load-context
 description: Load full project context for the Self-Aware API Platform. Run this at the start of any session to orient the LLM on objectives, stack, build state, and demo expectations.
 agent: agent
-tools: ['codebase', 'search']
+tools: ['search/codebase', 'search']
 ---
 
 You are working on the **Self-Aware API Platform** — a 48-hour hackathon project.

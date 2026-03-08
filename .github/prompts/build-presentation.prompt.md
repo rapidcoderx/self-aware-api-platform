@@ -2,7 +2,7 @@
 name: build-presentation
 description: Build the full Self-Aware API Platform hackathon presentation — starry dark theme, animated star field, all slides, deploy-ready for Vercel.
 agent: agent
-tools: ['editFiles', 'codebase', 'runCommands', 'search']
+tools: ['edit/editFiles', 'search/codebase', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read/terminalLastCommand', 'read/terminalSelection', 'search']
 ---
 
 Build the complete hackathon presentation for the **Self-Aware API Platform**.

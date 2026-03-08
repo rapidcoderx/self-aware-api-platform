@@ -2,7 +2,7 @@
 name: check-progress
 description: Read current build state from CLAUDE.md, summarise what is done, what remains, and recommend the next module to build with a time estimate.
 agent: API Platform Planner
-tools: ['codebase', 'search']
+tools: ['search/codebase', 'search']
 ---
 
 Read `CLAUDE.md` in the project root and analyse the Build Progress Tracker section.

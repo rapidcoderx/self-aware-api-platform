@@ -1,7 +1,7 @@
 ---
 name: API Platform Reviewer
 description: Code reviewer. Checks every file against CLAUDE.md constraints — stack compliance, error handling, security, and demo readiness.
-tools: ['codebase', 'search', 'problems']
+tools: ['search/codebase', 'search', 'read/problems']
 handoffs:
   - label: Fix the issues found
     agent: API Platform Builder

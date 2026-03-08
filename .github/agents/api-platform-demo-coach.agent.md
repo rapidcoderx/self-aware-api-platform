@@ -1,7 +1,7 @@
 ---
 name: API Platform Demo Coach
 description: Pre-demo rehearsal agent. Validates all 3 demo flows work end-to-end, identifies broken paths, and prepares the pitch narrative.
-tools: ['codebase', 'runCommands', 'fetch', 'search']
+tools: ['search/codebase', execute/getTerminalOutput, execute/runInTerminal, read/terminalLastCommand, read/terminalSelection, 'web/fetch', 'search']
 handoffs:
   - label: Fix broken demo path
     agent: API Platform Debugger

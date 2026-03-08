@@ -1,7 +1,7 @@
 ---
 name: API Platform Planner
 description: Session planning agent. Reads current build state, identifies what to build next, and produces a focused task plan for the coding session.
-tools: ['codebase', 'search', 'fetch']
+tools: ['search/codebase', 'search', 'web/fetch']
 handoffs:
   - label: Start building the plan
     agent: API Platform Builder

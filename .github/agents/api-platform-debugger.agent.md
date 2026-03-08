@@ -1,7 +1,7 @@
 ---
 name: API Platform Debugger
 description: Diagnoses broken builds, failing imports, DB connection errors, pgvector issues, and agent loop failures specific to this project.
-tools: ['codebase', 'search', 'runCommands', 'terminalLastCommand', 'problems', 'fetch']
+tools: ['search/codebase', 'search', execute/getTerminalOutput, execute/runInTerminal, read/terminalLastCommand, read/terminalSelection, 'read/terminalLastCommand', 'read/problems', 'web/fetch']
 handoffs:
   - label: Fix the root cause
     agent: API Platform Builder
@@ -27,7 +27,7 @@ When given an error, work through this sequence:
 ### Step 2 — Check the known failure patterns below
 
 ### Step 3 — Run targeted commands to confirm the diagnosis
-Use `#tool:runCommands` to run verification commands (listed below per issue type)
+Use `#tool:execute/runInTerminal` and `#tool:execute/getTerminalOutput` to run verification commands (listed below per issue type)
 
 ### Step 4 — Prescribe minimal fix
 Output: root cause + one-line fix command or code change

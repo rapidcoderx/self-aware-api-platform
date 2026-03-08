@@ -2,7 +2,7 @@
 name: review-module
 description: Review a completed module against CLAUDE.md constraints. Checks stack compliance, error handling, security, audit logging, and demo readiness.
 agent: API Platform Reviewer
-tools: ['codebase', 'search', 'problems']
+tools: ['search/codebase', 'search', 'read/problems']
 argument-hint: 'Which file to review? e.g. backend/tools/spec_diff.py'
 ---
 

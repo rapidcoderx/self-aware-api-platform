@@ -2,7 +2,7 @@
 name: fix-and-explain
 description: Debug an error in the Self-Aware API Platform. Paste the error and get a root cause diagnosis, minimal fix, and a plain-English explanation of what went wrong.
 agent: API Platform Debugger
-tools: ['codebase', 'runCommands', 'terminalLastCommand', 'problems', 'search']
+tools: ['search/codebase', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read/terminalLastCommand', 'read/terminalSelection', 'read/terminalLastCommand', 'read/problems', 'search']
 argument-hint: 'Paste the error message or describe what broke'
 ---
 
@@ -47,7 +47,7 @@ cd ~/self-aware-api-platform/backend && source .venv/bin/activate && python mcp_
 **Prism mock errors** → check YAML has no duplicate path keys
 
 ### 3. Run targeted verification
-Use `#tool:runCommands` to confirm the diagnosis before prescribing a fix.
+Use `#tool:execute/runInTerminal` and `#tool:execute/getTerminalOutput` to confirm the diagnosis before prescribing a fix.
 
 ### 4. Prescribe the minimal fix
 The smallest possible change that resolves the issue.

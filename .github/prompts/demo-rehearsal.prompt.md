@@ -2,7 +2,7 @@
 name: demo-rehearsal
 description: Run the full pre-demo checklist. Verifies all 3 demo flows, checks infrastructure, pre-loads demo data, and surfaces any broken paths before presenting.
 agent: API Platform Demo Coach
-tools: ['codebase', 'runCommands', 'fetch', 'problems']
+tools: ['search/codebase', 'execute/getTerminalOutput', 'execute/runInTerminal', 'read/terminalLastCommand', 'read/terminalSelection', 'web/fetch', 'read/problems']
 ---
 
 Run the full pre-demo checklist for the Self-Aware API Platform hackathon presentation.
