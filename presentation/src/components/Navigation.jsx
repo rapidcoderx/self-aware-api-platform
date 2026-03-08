@@ -71,8 +71,8 @@ export default function Navigation() {
               <ellipse cx="14" cy="14" rx="10" ry="5" stroke="#00d4ff" strokeWidth="1.2" fill="none" opacity="0.7" transform="rotate(30 14 14)" />
               <ellipse cx="14" cy="14" rx="10" ry="5" stroke="#7c3aed" strokeWidth="1.2" fill="none" opacity="0.7" transform="rotate(-30 14 14)" />
             </svg>
-            <span className="font-display font-bold text-star-white text-sm tracking-wide hidden sm:block group-hover:text-accent-primary transition-colors leading-tight">
-              Self-Aware<br />API Platform
+            <span className="font-display font-bold text-star-white text-sm tracking-wide hidden sm:block group-hover:text-accent-primary transition-colors">
+              Self-Aware API Platform
             </span>
           </button>
 
