@@ -56,7 +56,7 @@ export default function Navigation() {
   return (
     <>
       <motion.nav initial={{ y: -60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3 }}
-        className="fixed top-0 left-0 right-0 z-50 glass border-b border-accent-primary/20"
+        className="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-accent-primary/20"
         style={{ boxShadow: '0 0 30px rgba(0,212,255,0.05)' }}>
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           {/* Logo — click goes to Hero */}

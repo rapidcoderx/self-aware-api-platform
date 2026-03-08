@@ -1,5 +1,6 @@
 import StarField from './components/StarField'
 import Navigation from './components/Navigation'
+import GoToTop from './components/GoToTop'
 import Hero from './components/sections/Hero'
 import Problem from './components/sections/Problem'
 import Solution from './components/sections/Solution'
@@ -19,32 +20,6 @@ export default function App() {
 
       {/* Fixed navigation */}
       <Navigation />
-
-      {/* Floating orb decorations — will-change promotes to GPU compositor layer */}
-      <div
-        className="fixed pointer-events-none z-1"
-        style={{
-          top: '20%', left: '10%',
-          width: 400, height: 400,
-          background: 'radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%)',
-          borderRadius: '50%',
-          animation: 'float 8s ease-in-out infinite',
-          willChange: 'transform',
-        }}
-        aria-hidden
-      />
-      <div
-        className="fixed pointer-events-none z-1"
-        style={{
-          bottom: '30%', right: '8%',
-          width: 500, height: 500,
-          background: 'radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 70%)',
-          borderRadius: '50%',
-          animation: 'float 11s ease-in-out 3s infinite reverse',
-          willChange: 'transform',
-        }}
-        aria-hidden
-      />
 
       {/* All sections */}
       <main className="relative">
@@ -69,11 +44,10 @@ export default function App() {
         <CallToAction />
       </main>
 
+      {/* Back-to-top button — visible after scrolling past hero, mobile-friendly */}
+      <GoToTop />
+
       <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-30px) scale(1.05); }
-        }
         @keyframes twinkle {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }

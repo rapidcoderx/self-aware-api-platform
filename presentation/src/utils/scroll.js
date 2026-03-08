@@ -1,31 +1,46 @@
-// Eased smooth scroll — replaces native scrollIntoView for consistent feel
-// easeInOutQuart: slow start, fast middle, slow end
-const easeInOutQuart = (t) => t < 0.5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t
+// Eased smooth scroll — replaces native scrollIntoView.
+// easeOutCubic: quick start, smooth deceleration (feels snappier than InOut)
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3)
 
 let currentAnimation = null
 
-export function smoothScrollTo(targetY, duration = 700) {
+/**
+ * Duration scales with distance so short jumps feel instant
+ * and cross-page jumps are still smooth.
+ */
+function getDuration(distance) {
+  const abs = Math.abs(distance)
+  if (abs < 300)  return 220
+  if (abs < 900)  return 300
+  return 380
+}
+
+export function smoothScrollTo(targetY) {
   if (currentAnimation) cancelAnimationFrame(currentAnimation)
   const startY = window.scrollY
   const distance = targetY - startY
   if (Math.abs(distance) < 1) return
+  const duration = getDuration(distance)
   let startTime = null
+
+  // Pause CSS animations during scroll to free up GPU on Intel integrated
+  document.documentElement.classList.add('is-scrolling')
 
   const animate = (time) => {
     if (!startTime) startTime = time
     const elapsed = time - startTime
     const progress = Math.min(elapsed / duration, 1)
-    window.scrollTo(0, startY + distance * easeInOutQuart(progress))
+    window.scrollTo(0, startY + distance * easeOutCubic(progress))
     if (progress < 1) {
       currentAnimation = requestAnimationFrame(animate)
     } else {
       currentAnimation = null
+      document.documentElement.classList.remove('is-scrolling')
     }
   }
   currentAnimation = requestAnimationFrame(animate)
 }
 
-// NAV_HEIGHT matches the nav bar (py-3 padding + ~32px content row = ~56px)
 const NAV_HEIGHT = 60
 
 export function scrollToSection(id) {

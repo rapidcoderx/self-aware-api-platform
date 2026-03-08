@@ -8,7 +8,6 @@
   *, *::before, *::after { box-sizing: border-box; }
 
   html {
-    /* scroll-behavior removed — handled by JS easeInOutQuart in utils/scroll.js */
     scroll-padding-top: 60px;
     overscroll-behavior-y: none;
     cursor: crosshair;
@@ -23,9 +22,18 @@
     overflow-x: hidden;
   }
 
-  /* Give every section a top-offset so the fixed nav never obscures content */
+  /* Render boundary per section — prevents cross-section repaints */
   section {
     scroll-margin-top: 60px;
+    contain: paint;   /* paint-only: no fixed-position side effects */
+  }
+
+  /* Pause CSS animations while JS scroll is running — eliminates compositor
+     contention on Intel integrated graphics */
+  html.is-scrolling *,
+  html.is-scrolling *::before,
+  html.is-scrolling *::after {
+    animation-play-state: paused !important;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -34,20 +42,31 @@
 }
 
 @layer utilities {
+  /* ── Glass morphism ───────────────────────────────────────────────────────
+     backdrop-filter removed from cards — 20+ blurred layers destroyed Intel
+     integrated GPU performance. High-opacity dark bg is indistinguishable on
+     this design's dark background and eliminates compositor overhead entirely.
+     backdrop-filter is kept ONLY on .glass-nav (the single nav bar element).
+  ─────────────────────────────────────────────────────────────────────────── */
   .glass {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(8, 16, 30, 0.92);
     border: 1px solid rgba(0, 212, 255, 0.12);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 32px rgba(0,0,0,0.4);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.5);
   }
 
   .glass-strong {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background: rgba(12, 24, 46, 0.96);
     border: 1px solid rgba(0, 212, 255, 0.2);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 48px rgba(0,0,0,0.5);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 40px rgba(0,0,0,0.6);
+  }
+
+  /* ── Nav-only blur — one element, always composited, acceptable cost ── */
+  .glass-nav {
+    background: rgba(2, 4, 9, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 212, 255, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 32px rgba(0,0,0,0.4);
   }
 
   .text-gradient-cyan {
