@@ -561,14 +561,20 @@ Switch to **api-platform-reviewer** agent:
 /review-module backend/agent.py
 ```
 
-**Blockers to fix before Phase 4:**
-- [ ] `agent.py` has `MAX_ITERATIONS = 10` guard — loop cannot run forever
-- [ ] Agent always validates the payload before returning an answer (calls `spec_validate_request`)
-- [ ] `run_agent()` returns `ProvenanceInfo` alongside the answer text
-- [ ] Tool call results appended as `tool_result` blocks — not raw text strings
-- [ ] `RuntimeError` raised if `MAX_ITERATIONS` exceeded — caught at route level → HTTP 503
-- [ ] System prompt contains: PROVENANCE instruction, SANDBOX notice, TOOLS-ONLY instruction
-- [ ] `mcp_server.py` tool definitions match canonical signatures in CLAUDE.md exactly
+**Blockers to fix before Phase 4:** ✅ ALL RESOLVED
+- [x] `agent.py` has `MAX_ITERATIONS = 10` guard — loop cannot run forever
+- [x] Agent always validates the payload before returning an answer (calls `spec_validate_request`)
+- [x] `run_agent()` returns `ProvenanceInfo` alongside the answer text
+- [x] Tool call results appended as `tool_result` blocks — not raw text strings
+- [x] `RuntimeError` raised if `MAX_ITERATIONS` exceeded — caught at route level → HTTP 503
+- [x] System prompt contains: PROVENANCE instruction, SANDBOX notice, TOOLS-ONLY instruction
+- [x] `mcp_server.py` tool definitions match canonical signatures in CLAUDE.md exactly
+- [x] `client.messages.create()` wrapped in `asyncio.to_thread()` — no event loop blocking
+- [x] `get_spec_by_id()` wrapped in `asyncio.to_thread()` — no sync DB call in async context
+- [x] `_extract_provenance()` receives `spec_info` directly — no redundant DB query
+- [x] HTTP 500 handler returns generic message — no internal error detail leakage
+- [x] `_sanitise()` handles nested dicts inside lists — full recursive redaction
+- [x] `vector_store.py` has type hints on all `conn` parameters
 
 Verify agent provenance in audit log:
 ```bash

@@ -252,6 +252,8 @@ def _sanitise(data: dict) -> dict:
             out[k] = "[REDACTED]"
         elif isinstance(v, dict):
             out[k] = _sanitise(v)
+        elif isinstance(v, list):
+            out[k] = [_sanitise(item) if isinstance(item, dict) else item for item in v]
         else:
             out[k] = v
     return out

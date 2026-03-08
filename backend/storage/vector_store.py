@@ -3,6 +3,8 @@
 import logging
 from typing import Optional
 
+import psycopg2.extensions
+
 from storage.schema_store import get_db
 
 logger = logging.getLogger(__name__)
@@ -12,7 +14,7 @@ def cosine_search(
     embedding: list[float],
     spec_id: int,
     limit: int = 5,
-    conn=None,
+    conn: Optional[psycopg2.extensions.connection] = None,
 ) -> list[dict]:
     """
     Run a cosine similarity search against the endpoints table using pgvector.
@@ -65,7 +67,7 @@ def similarity_search(
     embedding: list[float],
     spec_id: int,
     limit: int = 5,
-    conn=None,
+    conn: Optional[psycopg2.extensions.connection] = None,
 ) -> list[dict]:
     """
     Canonical public alias for cosine_search — exposed as `similarity_search`

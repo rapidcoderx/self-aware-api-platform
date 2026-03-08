@@ -280,9 +280,9 @@ Update this section as modules are completed.
 - [x] `spec_search` tool (`tools/spec_search.py`)
 - [x] `spec_get_endpoint` tool (`tools/spec_get.py`)
 - [x] `spec_validate_request` tool (`tools/spec_validate.py`)
-- [ ] MCP server (`mcp_server.py`)
-- [ ] Agent orchestrator (`agent.py`)
-- [ ] Chat API route (`POST /api/chat`)
+- [x] MCP server (`mcp_server.py`)
+- [x] Agent orchestrator (`agent.py`)
+- [x] Chat API route (`POST /api/chat`)
 - [ ] React 3-panel layout (`App.jsx`)
 - [ ] ChatPanel with tool call display
 - [ ] ValidationPanel

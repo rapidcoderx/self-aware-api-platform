@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 from ingestion.chunker import chunk_endpoint
 from ingestion.embedder import embed_texts
 from ingestion.normalizer import normalize_spec
+from routes.chat import chat_router
 from storage.schema_store import (
     bulk_insert_endpoints,
     delete_spec,
@@ -68,6 +69,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Register routers ───────────────────────────────────────────────────────────
+app.include_router(chat_router)
 
 
 # ── Pydantic response models ───────────────────────────────────────────────────
