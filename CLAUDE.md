@@ -283,9 +283,9 @@ Update this section as modules are completed.
 - [x] MCP server (`mcp_server.py`)
 - [x] Agent orchestrator (`agent.py`)
 - [x] Chat API route (`POST /api/chat`)
-- [ ] React 3-panel layout (`App.jsx`)
-- [ ] ChatPanel with tool call display
-- [ ] ValidationPanel
+- [x] React 3-panel layout (`App.jsx`)
+- [x] ChatPanel with tool call display
+- [x] ValidationPanel
 
 ### Day 2
 - [x] Spec versioning (auto-increment on re-ingest)

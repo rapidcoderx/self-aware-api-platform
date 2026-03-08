@@ -666,13 +666,13 @@ Switch to **api-platform-reviewer** agent:
 ```
 
 **Blockers to fix before Phase 5:**
-- [ ] All API calls use `axios` — no raw `fetch()`
-- [ ] All three states handled in every component: loading, error, success
-- [ ] No `console.log()` left in component files
-- [ ] Tool chips are collapsible — not always expanded (noisy UX)
-- [ ] Provenance badge is always visible — not hidden behind a toggle
-- [ ] Sandbox mode badge visible somewhere in the layout
-- [ ] Error states show human-readable message — not raw JSON
+- [x] All API calls use `axios` — no raw `fetch()`
+- [x] All three states handled in every component: loading, error, success
+- [x] No `console.log()` left in component files
+- [x] Tool chips are collapsible — not always expanded (noisy UX)
+- [x] Provenance badge is always visible — not hidden behind a toggle
+- [x] Sandbox mode badge visible somewhere in the layout
+- [x] Error states show human-readable message — not raw JSON
 
 **Tick CLAUDE.md items 12–14 only after this review passes.**
 
