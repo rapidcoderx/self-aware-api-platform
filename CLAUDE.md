@@ -44,7 +44,7 @@ and self-healing — using MCP as the enforcement layer for safe agentic intelli
 Backend:    Python 3.12.12 + FastAPI + uvicorn
 Agent:      Anthropic SDK — claude-sonnet-4-20250514 — tool_use loop
 MCP:        mcp Python SDK — stdio transport
-Embeddings: voyageai — voyage-3 — dim=1024
+Embeddings: voyageai — voyage-4 — dim=1024
 Storage:    PostgreSQL 16 + pgvector 0.8.2 — selfaware_api DB
 Parsing:    prance ($ref resolution) + jsonschema (validation)
 Frontend:   React 18 + Vite 5 + Tailwind CSS 3
@@ -246,8 +246,8 @@ import voyageai, os
 client = voyageai.Client(api_key=os.getenv("VOYAGE_API_KEY"))
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Batch embed. voyage-3 returns dim=1024 vectors."""
-    result = client.embed(texts, model="voyage-3")
+    """Batch embed. voyage-4 returns dim=1024 vectors."""
+    result = client.embed(texts, model="voyage-4")
     return result.embeddings  # list of list[float]
 ```
 
@@ -270,14 +270,16 @@ One module at a time. No placeholders — full implementation.
 Update this section as modules are completed.
 
 ### Day 1
-- [ ] Repo scaffold + FastAPI health check (`main.py`)
-- [ ] DB connection + schema verify (`storage/schema_store.py`)
-- [ ] OpenAPI normalizer (`ingestion/normalizer.py`)
-- [ ] Embedding pipeline (`ingestion/embedder.py`)
-- [ ] Spec ingest route (`POST /api/specs/ingest`)
-- [ ] `spec_search` tool (`tools/spec_search.py`)
-- [ ] `spec_get_endpoint` tool (`tools/spec_get.py`)
-- [ ] `spec_validate_request` tool (`tools/spec_validate.py`)
+- [x] Repo scaffold + FastAPI health check (`main.py`)
+- [x] DB connection + schema verify (`storage/schema_store.py`)
+- [x] pgvector similarity search (`storage/vector_store.py`)
+- [x] OpenAPI normalizer (`ingestion/normalizer.py`)
+- [x] Endpoint text chunker (`ingestion/chunker.py`)
+- [x] Embedding pipeline (`ingestion/embedder.py`)
+- [x] Spec ingest route (`POST /api/specs/ingest`)
+- [x] `spec_search` tool (`tools/spec_search.py`)
+- [x] `spec_get_endpoint` tool (`tools/spec_get.py`)
+- [x] `spec_validate_request` tool (`tools/spec_validate.py`)
 - [ ] MCP server (`mcp_server.py`)
 - [ ] Agent orchestrator (`agent.py`)
 - [ ] Chat API route (`POST /api/chat`)
@@ -286,7 +288,7 @@ Update this section as modules are completed.
 - [ ] ValidationPanel
 
 ### Day 2
-- [ ] Spec versioning (auto-increment on re-ingest)
+- [x] Spec versioning (auto-increment on re-ingest)
 - [ ] `spec_diff` tool (`tools/spec_diff.py`)
 - [ ] Diff route (`POST /api/specs/compare`)
 - [ ] DiffPanel UI
