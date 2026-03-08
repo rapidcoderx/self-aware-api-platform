@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { scrollToSection } from '../../utils/scroll'
 
 const fu = (delay = 0) => ({ initial: { opacity: 0, y: 30 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.7, delay } })
 
@@ -31,7 +32,7 @@ export default function Hero() {
           ))}
         </motion.div>
         <motion.button {...fu(0.7)} whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(0,212,255,0.5)' }} whileTap={{ scale: 0.97 }}
-          onClick={() => document.getElementById('architecture')?.scrollIntoView({ behavior: 'smooth' })}
+          onClick={() => scrollToSection('architecture')}
           className="font-mono text-accent-primary border border-accent-primary/50 rounded-xl px-8 py-3 text-sm tracking-wider transition-all hover:bg-accent-primary/10">
           View Architecture ↓
         </motion.button>

@@ -8,7 +8,9 @@
   *, *::before, *::after { box-sizing: border-box; }
 
   html {
-    scroll-behavior: smooth;
+    /* scroll-behavior removed — handled by JS easeInOutQuart in utils/scroll.js */
+    scroll-padding-top: 60px;
+    overscroll-behavior-y: none;
     cursor: crosshair;
   }
 
@@ -19,6 +21,11 @@
     font-family: 'DM Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+  }
+
+  /* Give every section a top-offset so the fixed nav never obscures content */
+  section {
+    scroll-margin-top: 60px;
   }
 
   h1, h2, h3, h4, h5, h6 {

@@ -20,7 +20,7 @@ export default function App() {
       {/* Fixed navigation */}
       <Navigation />
 
-      {/* Floating orb decorations */}
+      {/* Floating orb decorations — will-change promotes to GPU compositor layer */}
       <div
         className="fixed pointer-events-none z-1"
         style={{
@@ -29,6 +29,7 @@ export default function App() {
           background: 'radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%)',
           borderRadius: '50%',
           animation: 'float 8s ease-in-out infinite',
+          willChange: 'transform',
         }}
         aria-hidden
       />
@@ -40,6 +41,7 @@ export default function App() {
           background: 'radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 70%)',
           borderRadius: '50%',
           animation: 'float 11s ease-in-out 3s infinite reverse',
+          willChange: 'transform',
         }}
         aria-hidden
       />

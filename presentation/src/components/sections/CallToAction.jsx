@@ -41,8 +41,16 @@ export default function CallToAction() {
           <p className="font-display font-black text-3xl md:text-4xl lg:text-5xl text-gradient-cyan glow-text-cyan mb-6 leading-tight">
             "Self-Aware API Platform.<br />Living infrastructure for the agentic era."
           </p>
-          <motion.p initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.9 }} className="font-mono text-star-blue/50 text-sm">
+          <motion.p initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.9 }} className="font-mono text-star-blue/50 text-sm mb-3">
             Built in 48 hours · March 2026
+          </motion.p>
+          <motion.p initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 1.1 }} className="font-body text-star-blue/40 text-sm flex items-center justify-center gap-2">
+            Built with
+            <span className="text-accent-red/70 text-base">♥</span>
+            using
+            <span className="font-mono text-accent-primary/70">Claude</span>
+            by
+            <span className="font-display font-semibold text-star-white/60">The Autonomous Duo</span>
           </motion.p>
           <div className="mt-16 flex justify-center gap-8 opacity-30" aria-hidden>
             {Array.from({ length: 12 }).map((_, i) => (
