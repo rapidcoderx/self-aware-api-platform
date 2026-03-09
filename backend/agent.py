@@ -14,10 +14,11 @@ from pydantic import BaseModel
 
 load_dotenv()
 
-from storage.schema_store import get_db, get_spec_by_id, log_audit
+from storage.schema_store import get_spec_by_id, log_audit
 from tools.spec_get import get_endpoint, EndpointDetail
 from tools.spec_search import search_endpoints
 from tools.spec_validate import validate_request
+from tools.spec_diff import DiffItem, diff_specs
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,16 @@ logger = logging.getLogger(__name__)
 
 MODEL = "claude-sonnet-4-20250514"
 MAX_ITERATIONS = 10
+
+# Module-level singleton — avoids recreating HTTP connection pool on every request
+_anthropic_client: Optional[anthropic.Anthropic] = None
+
+
+def _get_client() -> anthropic.Anthropic:
+    global _anthropic_client
+    if _anthropic_client is None:
+        _anthropic_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    return _anthropic_client
 
 SYSTEM_PROMPT = """You are an API intelligence assistant for the Self-Aware API Platform.
 
@@ -149,7 +160,7 @@ async def _dispatch_tool(name: str, arguments: dict) -> str:
         results = await search_endpoints(
             query=arguments["query"],
             spec_id=arguments["spec_id"],
-            limit=arguments.get("limit", 5),
+            limit=arguments.get("limit", 3),  # 3 is enough for demo; saves input tokens
         )
         return json.dumps([r.model_dump() for r in results], default=str)
 
@@ -158,7 +169,10 @@ async def _dispatch_tool(name: str, arguments: dict) -> str:
             operation_id=arguments["operation_id"],
             spec_id=arguments["spec_id"],
         )
-        return json.dumps(detail.model_dump(), default=str)
+        # Strip response_schemas — Claude only needs request schema; saves input tokens
+        data = detail.model_dump()
+        data.pop("response_schemas", None)
+        return json.dumps(data, default=str)
 
     elif name == "spec_validate_request":
         result = await validate_request(
@@ -206,14 +220,17 @@ async def run_agent(user_message: str, spec_id: int) -> AgentResponse:
     Returns AgentResponse with answer, tool_calls, and provenance.
     Raises RuntimeError if MAX_ITERATIONS exceeded.
     """
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    start = time.perf_counter()
+    client = _get_client()
 
     # Inject spec context so Claude knows which spec_id to use in tool calls
     spec_info = await asyncio.to_thread(get_spec_by_id, spec_id)
+    if spec_info is None:
+        raise ValueError(f"spec_id={spec_id} not found")
     spec_context = (
         f"\n\n[CONTEXT: You are working with spec_id={spec_id}"
-        + (f", spec name='{spec_info['name']}', version={spec_info['version']}" if spec_info else "")
-        + ". Always use this spec_id when calling tools.]"
+        f", spec name='{spec_info['name']}', version={spec_info['version']}"
+        f". Always use this spec_id when calling tools.]"
     )
 
     messages: list[dict[str, Any]] = [
@@ -222,13 +239,20 @@ async def run_agent(user_message: str, spec_id: int) -> AgentResponse:
     tool_call_records: list[ToolCallRecord] = []
     provenance: Optional[ProvenanceInfo] = None
 
+    async def _safe_dispatch(block: Any) -> tuple[str, bool]:
+        try:
+            return await _dispatch_tool(block.name, block.input), False
+        except Exception as exc:
+            logger.error(f"Tool {block.name} failed: {exc}", exc_info=True)
+            return json.dumps({"error": str(exc)}), True
+
     for iteration in range(MAX_ITERATIONS):
         logger.info(f"Agent iteration {iteration + 1}/{MAX_ITERATIONS}")
 
         response = await asyncio.to_thread(
             client.messages.create,
             model=MODEL,
-            max_tokens=4096,
+            max_tokens=1024,  # chat answers are concise; was 4096
             system=SYSTEM_PROMPT,
             tools=TOOL_DEFINITIONS,
             messages=messages,
@@ -244,10 +268,25 @@ async def run_agent(user_message: str, spec_id: int) -> AgentResponse:
             # Build provenance from tool call history
             provenance = _extract_provenance(tool_call_records, spec_info)
 
+            duration_ms = int((time.perf_counter() - start) * 1000)
             logger.info(
                 f"Agent finished after {iteration + 1} iterations, "
                 f"{len(tool_call_records)} tool calls"
             )
+            try:
+                log_audit(
+                    tool_name="run_agent",
+                    inputs={"user_message": user_message[:200], "spec_id": spec_id},
+                    outputs={
+                        "answer_length": len(answer_text),
+                        "tool_calls_count": len(tool_call_records),
+                        "iterations": iteration + 1,
+                    },
+                    spec_id=spec_id,
+                    duration_ms=duration_ms,
+                )
+            except Exception as audit_exc:
+                logger.warning(f"audit log failed (non-fatal): {audit_exc}")
             return AgentResponse(
                 answer=answer_text,
                 tool_calls=tool_call_records,
@@ -259,41 +298,32 @@ async def run_agent(user_message: str, spec_id: int) -> AgentResponse:
             # First, append the assistant message with ALL content blocks
             messages.append({"role": "assistant", "content": response.content})
 
-            # Then process each tool_use block and collect results
+            # Collect all tool_use blocks and dispatch them concurrently
+            tool_use_blocks = [b for b in response.content if b.type == "tool_use"]
+            for block in tool_use_blocks:
+                logger.info(f"Tool call: {block.name}({list(block.input.keys())})")
+
+            dispatch_results = await asyncio.gather(
+                *[_safe_dispatch(b) for b in tool_use_blocks]
+            )
+
             tool_results: list[dict[str, Any]] = []
-            for block in response.content:
-                if block.type == "tool_use":
-                    tool_name = block.name
-                    tool_input = block.input
-                    tool_use_id = block.id
-
-                    logger.info(f"Tool call: {tool_name}({list(tool_input.keys())})")
-
-                    try:
-                        result_json = await _dispatch_tool(tool_name, tool_input)
-                        is_error = False
-                    except Exception as exc:
-                        logger.error(f"Tool {tool_name} failed: {exc}", exc_info=True)
-                        result_json = json.dumps({"error": str(exc)})
-                        is_error = True
-
-                    # Record the tool call
-                    tool_call_records.append(
-                        ToolCallRecord(
-                            tool_name=tool_name,
-                            inputs=tool_input,
-                            result_summary=_summarise_result(tool_name, result_json),
-                        )
+            for block, (result_json, is_error) in zip(tool_use_blocks, dispatch_results):
+                tool_call_records.append(
+                    ToolCallRecord(
+                        tool_name=block.name,
+                        inputs=block.input,
+                        result_summary=_summarise_result(block.name, result_json),
                     )
-
-                    tool_results.append(
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": tool_use_id,
-                            "content": result_json,
-                            "is_error": is_error,
-                        }
-                    )
+                )
+                tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result_json,
+                        "is_error": is_error,
+                    }
+                )
 
             # Append all tool results as a single user message
             messages.append({"role": "user", "content": tool_results})
@@ -305,12 +335,42 @@ async def run_agent(user_message: str, spec_id: int) -> AgentResponse:
         for block in response.content:
             if block.type == "text":
                 answer_text += block.text
+        duration_ms = int((time.perf_counter() - start) * 1000)
+        try:
+            log_audit(
+                tool_name="run_agent",
+                inputs={"user_message": user_message[:200], "spec_id": spec_id},
+                outputs={
+                    "answer_length": len(answer_text),
+                    "tool_calls_count": len(tool_call_records),
+                    "stop_reason": response.stop_reason,
+                },
+                spec_id=spec_id,
+                duration_ms=duration_ms,
+            )
+        except Exception as audit_exc:
+            logger.warning(f"audit log failed (non-fatal): {audit_exc}")
         return AgentResponse(
             answer=answer_text or "Agent stopped unexpectedly.",
             tool_calls=tool_call_records,
             provenance=_extract_provenance(tool_call_records, spec_info),
         )
 
+    duration_ms = int((time.perf_counter() - start) * 1000)
+    try:
+        log_audit(
+            tool_name="run_agent",
+            inputs={"user_message": user_message[:200], "spec_id": spec_id},
+            outputs={
+                "error": "max_iterations_exceeded",
+                "tool_calls_count": len(tool_call_records),
+                "iterations": MAX_ITERATIONS,
+            },
+            spec_id=spec_id,
+            duration_ms=duration_ms,
+        )
+    except Exception as audit_exc:
+        logger.warning(f"audit log failed (non-fatal): {audit_exc}")
     raise RuntimeError(
         f"Agent exceeded maximum iterations ({MAX_ITERATIONS}). "
         f"Completed {len(tool_call_records)} tool calls before limit."
@@ -433,7 +493,7 @@ def _build_before_payload(old_detail: EndpointDetail) -> dict:
     return payload
 
 
-def _build_migration_steps(diffs: "list[DiffItem]") -> list[str]:
+def _build_migration_steps(diffs: list[DiffItem]) -> list[str]:
     """
     Generate human-readable migration steps from a list of DiffItem objects.
     Returns sentences suitable for display to a developer.
@@ -494,22 +554,34 @@ async def run_self_heal(
     """
     start = time.perf_counter()
 
-    # ── Lazy import to avoid circular dependency ────────────────────────────────
-    from tools.spec_diff import diff_specs  # noqa: F401
-
     # ── Step 1: Fetch schemas ───────────────────────────────────────────────────
     logger.info(f"Self-heal: fetching schemas for op={operation_id}")
-    old_detail = await get_endpoint(operation_id, old_spec_id)
+    try:
+        old_detail = await get_endpoint(operation_id, old_spec_id)
+    except Exception as exc:
+        raise ValueError(
+            f"operation_id='{operation_id}' not found in spec_id={old_spec_id}"
+        ) from exc
 
     # ── Step 2: Get breaking diffs for this operation ───────────────────────────
-    all_diffs = await diff_specs(old_spec_id, new_spec_id)
+    try:
+        all_diffs = await diff_specs(old_spec_id, new_spec_id)
+    except Exception as exc:
+        raise ValueError(
+            f"Failed to diff spec_id={old_spec_id} vs spec_id={new_spec_id}"
+        ) from exc
     op_diffs = [d for d in all_diffs if d.operation_id == operation_id]
     breaking_diffs = [d for d in op_diffs if d.breaking]
     logger.info(f"Self-heal: {len(breaking_diffs)} breaking changes for op={operation_id}")
 
     # ── Step 3: Build before_payload and validate against NEW spec ──────────────
     before_payload = _build_before_payload(old_detail)
-    before_val_result = await validate_request(operation_id, before_payload, new_spec_id)
+    try:
+        before_val_result = await validate_request(operation_id, before_payload, new_spec_id)
+    except Exception as exc:
+        raise ValueError(
+            f"Could not validate before_payload for '{operation_id}' against spec_id={new_spec_id}"
+        ) from exc
     before_validation = before_val_result.model_dump()
     logger.info(
         f"Self-heal: before_payload valid={before_validation['valid']} "
@@ -535,7 +607,7 @@ async def run_self_heal(
         f"4. Respond ONLY with: {{\"payload\": {{...}}}}"
     )
 
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = _get_client()
     messages: list[dict[str, Any]] = [{"role": "user", "content": user_message}]
 
     after_payload: dict = {}
@@ -649,21 +721,24 @@ async def run_self_heal(
     migration_steps = _build_migration_steps(breaking_diffs)
 
     duration_ms = int((time.perf_counter() - start) * 1000)
-    log_audit(
-        tool_name="run_self_heal",
-        inputs={
-            "old_spec_id": old_spec_id,
-            "new_spec_id": new_spec_id,
-            "operation_id": operation_id,
-        },
-        outputs={
-            "before_valid": before_validation.get("valid"),
-            "after_valid": after_validation.get("valid"),
-            "migration_steps_count": len(migration_steps),
-        },
-        spec_id=new_spec_id,
-        duration_ms=duration_ms,
-    )
+    try:
+        log_audit(
+            tool_name="run_self_heal",
+            inputs={
+                "old_spec_id": old_spec_id,
+                "new_spec_id": new_spec_id,
+                "operation_id": operation_id,
+            },
+            outputs={
+                "before_valid": before_validation.get("valid"),
+                "after_valid": after_validation.get("valid"),
+                "migration_steps_count": len(migration_steps),
+            },
+            spec_id=new_spec_id,
+            duration_ms=duration_ms,
+        )
+    except Exception as audit_exc:
+        logger.warning(f"audit log failed (non-fatal): {audit_exc}")
 
     logger.info(
         f"Self-heal complete: op={operation_id} "
