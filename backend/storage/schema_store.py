@@ -286,3 +286,79 @@ def log_audit(
                 conn.commit()
     except Exception as e:
         logger.error(f"Audit log write failed: {e}")
+
+
+def save_diff(
+    old_spec_id: int,
+    new_spec_id: int,
+    diffs: list[dict],
+    breaking_count: int,
+) -> int:
+    """Persist a computed diff to the diffs table. Returns the new diff_id."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO diffs (spec_id_old, spec_id_new, diff_json, breaking_count)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (old_spec_id, new_spec_id, json.dumps(diffs), breaking_count),
+            )
+            diff_id: int = cur.fetchone()[0]
+        conn.commit()
+    logger.info(
+        f"Saved diff id={diff_id} old={old_spec_id} new={new_spec_id} breaking={breaking_count}"
+    )
+    return diff_id
+
+
+def get_diff_by_id(diff_id: int) -> Optional[dict]:
+    """Load a diff record from the diffs table. Returns None if not found."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, spec_id_old, spec_id_new, diff_json, breaking_count
+                FROM diffs
+                WHERE id = %s
+                """,
+                (diff_id,),
+            )
+            row = cur.fetchone()
+    if not row:
+        return None
+    return {
+        "id": row[0],
+        "spec_id_old": row[1],
+        "spec_id_new": row[2],
+        "diff_json": row[3],
+        "breaking_count": row[4],
+    }
+
+
+def list_audit_logs(limit: int = 20) -> list[dict]:
+    """Return the most recent audit_log entries, newest-first."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, tool_name, inputs, outputs, spec_id, duration_ms, created_at
+                FROM audit_logs
+                ORDER BY created_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+            return [
+                {
+                    "id": r[0],
+                    "tool_name": r[1],
+                    "inputs": r[2],
+                    "outputs": r[3],
+                    "spec_id": r[4],
+                    "duration_ms": r[5],
+                    "created_at": r[6].isoformat() if r[6] else None,
+                }
+                for r in cur.fetchall()
+            ]

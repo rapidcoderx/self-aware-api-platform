@@ -289,10 +289,10 @@ Update this section as modules are completed.
 
 ### Day 2
 - [x] Spec versioning (auto-increment on re-ingest)
-- [ ] `spec_diff` tool (`tools/spec_diff.py`)
-- [ ] Diff route (`POST /api/specs/compare`)
-- [ ] DiffPanel UI
-- [ ] `impact_analyze` tool (`tools/impact_analyze.py`)
+- [x] `spec_diff` tool (`tools/spec_diff.py`)
+- [x] Diff route (`POST /api/specs/compare`)
+- [x] DiffPanel UI
+- [x] `impact_analyze` tool (`tools/impact_analyze.py`)
 - [ ] Self-heal loop in `agent.py`
 - [ ] MigrationPanel UI
 - [ ] Responsible AI panel (audit log modal)

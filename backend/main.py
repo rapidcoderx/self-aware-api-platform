@@ -25,9 +25,11 @@ from ingestion.chunker import chunk_endpoint
 from ingestion.embedder import embed_texts
 from ingestion.normalizer import normalize_spec
 from routes.chat import chat_router
+from routes.compare import compare_router
 from storage.schema_store import (
     bulk_insert_endpoints,
     delete_spec,
+    list_audit_logs,
     list_specs,
     upsert_spec,
     verify_schema,
@@ -72,6 +74,7 @@ app.add_middleware(
 
 # ── Register routers ───────────────────────────────────────────────────────────
 app.include_router(chat_router)
+app.include_router(compare_router)
 
 
 # ── Pydantic response models ───────────────────────────────────────────────────
@@ -95,6 +98,16 @@ class SpecListItem(BaseModel):
     name: str
     version: int
     hash: str
+    created_at: str
+
+
+class AuditLogEntry(BaseModel):
+    id: int
+    tool_name: str
+    inputs: dict
+    outputs: dict
+    spec_id: int | None
+    duration_ms: int
     created_at: str
 
 
@@ -195,7 +208,7 @@ async def ingest_spec(
         raise
     except Exception as e:
         logger.error(f"Ingest failed for '{spec_name}': {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
     finally:
         if tmp_path:
             try:
@@ -208,3 +221,9 @@ async def ingest_spec(
 async def list_all_specs() -> list[SpecListItem]:
     """List all ingested specs ordered by name and version."""
     return [SpecListItem(**s) for s in list_specs()]
+
+
+@app.get("/api/audit-logs", response_model=list[AuditLogEntry])
+async def get_audit_logs(limit: int = 20) -> list[AuditLogEntry]:
+    """Return the most recent audit log entries (newest-first)."""
+    return list_audit_logs(limit=min(limit, 100))
