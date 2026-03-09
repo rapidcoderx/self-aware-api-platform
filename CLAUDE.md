@@ -296,8 +296,8 @@ Update this section as modules are completed.
 - [x] Self-heal loop in `agent.py` (`run_self_heal`, `SELF_HEAL_MAX_REVISIONS=3`, helpers)
 - [x] `POST /api/agent/self-heal` route (`routes/selfheal.py`)
 - [x] `MigrationPanel.jsx` (before/after payloads, export, confirm dialog)
-- [ ] Responsible AI panel (audit log modal)
-- [ ] Spec upload UI component
+- [x] Responsible AI panel (audit log modal)
+- [x] Spec upload UI component
 - [ ] End-to-end demo rehearsal
 
 ---

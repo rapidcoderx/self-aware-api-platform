@@ -1,6 +1,7 @@
 # TODO-1: FastAPI app scaffold + health check ✅
 # TODO-6: POST /api/specs/ingest — upload YAML/JSON, normalise, embed, store ✅
 
+import asyncio
 import logging
 import os
 import tempfile
@@ -27,9 +28,11 @@ from ingestion.normalizer import normalize_spec
 from routes.chat import chat_router
 from routes.compare import compare_router
 from routes.selfheal import selfheal_router
+from tools.impact_analyze import ImpactItem, analyze_impact
 from storage.schema_store import (
     bulk_insert_endpoints,
     delete_spec,
+    get_diff_by_id,
     list_audit_logs,
     list_specs,
     upsert_spec,
@@ -192,7 +195,7 @@ async def ingest_spec(
                 logger.error(f"Orphan cleanup failed for spec_id={spec_id}: {del_err}")
             raise HTTPException(
                 status_code=502,
-                detail=f"Embedding pipeline failed: {embed_err}",
+                detail="Embedding pipeline failed — check server logs",
             )
 
         logger.info(
@@ -222,10 +225,30 @@ async def ingest_spec(
 @app.get("/api/specs", response_model=list[SpecListItem])
 async def list_all_specs() -> list[SpecListItem]:
     """List all ingested specs ordered by name and version."""
-    return [SpecListItem(**s) for s in list_specs()]
+    specs = await asyncio.to_thread(list_specs)
+    return [SpecListItem(**s) for s in specs]
+
+
+@app.get("/api/specs/impact/{diff_id}", response_model=list[ImpactItem])
+async def get_spec_impact(diff_id: int) -> list[ImpactItem]:
+    """Analyze downstream service impact for a stored diff."""
+    diff = await asyncio.to_thread(get_diff_by_id, diff_id)
+    if diff is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Diff not found",
+        )
+    try:
+        return await analyze_impact(diff_id)
+    except Exception as exc:
+        logger.error(f"Impact analysis failed for diff_id={diff_id}: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Impact analysis failed",
+        )
 
 
 @app.get("/api/audit-logs", response_model=list[AuditLogEntry])
 async def get_audit_logs(limit: int = 20) -> list[AuditLogEntry]:
     """Return the most recent audit log entries (newest-first)."""
-    return list_audit_logs(limit=min(limit, 100))
+    return await asyncio.to_thread(list_audit_logs, max(1, min(limit, 100)))

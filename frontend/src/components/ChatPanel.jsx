@@ -143,6 +143,7 @@ export default function ChatPanel({ specId, onResult }) {
             hasErrors: validationCall.result_summary.startsWith('valid=False'),
           } : null,
           endpoint: endpointCall ? { raw: endpointCall.result_summary } : null,
+          provenance: data.provenance || null,
         })
       }
     } catch (err) {
