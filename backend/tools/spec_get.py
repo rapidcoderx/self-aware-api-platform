@@ -1,5 +1,6 @@
 # MCP tool: get_endpoint — fetch full schema for one operationId
 
+import asyncio
 import logging
 import time
 from typing import Optional
@@ -41,7 +42,7 @@ async def get_endpoint(
     detail: Optional[EndpointDetail] = None
 
     try:
-        row = fetch_endpoint_row(operation_id, spec_id)
+        row = await asyncio.to_thread(fetch_endpoint_row, operation_id, spec_id)
         if row is None:
             raise ValueError(
                 f"Endpoint '{operation_id}' not found in spec_id={spec_id}"

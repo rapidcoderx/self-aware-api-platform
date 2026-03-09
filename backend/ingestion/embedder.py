@@ -58,7 +58,15 @@ def embed_texts(
 
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
-        result = client.embed(batch, model=_VOYAGE_MODEL, **kwargs)
+        try:
+            result = client.embed(batch, model=_VOYAGE_MODEL, **kwargs)
+        except Exception as exc:
+            logger.error(
+                f"Voyage AI embed failed (batch {i // batch_size + 1}, "
+                f"texts {i}–{i + len(batch) - 1}): {exc}",
+                exc_info=True,
+            )
+            raise RuntimeError(f"Voyage AI embedding failed: {exc}") from exc
         all_embeddings.extend(result.embeddings)
         logger.debug(f"Embedded batch {i // batch_size + 1}: {len(batch)} texts")
 

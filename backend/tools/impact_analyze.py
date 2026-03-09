@@ -1,6 +1,7 @@
 # MCP tool: analyze_impact — map breaking diff changes to downstream services
 # Loads specs/dependencies.yaml, never hardcodes service names
 
+import asyncio
 import logging
 import os
 import time
@@ -52,7 +53,7 @@ async def analyze_impact(diff_id: int) -> list[ImpactItem]:
 
     try:
         # Load the diff record
-        record = get_diff_by_id(diff_id)
+        record = await asyncio.to_thread(get_diff_by_id, diff_id)
         if record is None:
             raise ValueError(f"diff_id={diff_id} not found in diffs table")
 
@@ -64,7 +65,7 @@ async def analyze_impact(diff_id: int) -> list[ImpactItem]:
             return impacts
 
         # Load dependency graph
-        deps = _load_dependencies()
+        deps = await asyncio.to_thread(_load_dependencies)
 
         # Group breaking changes by operation_id
         by_op: dict[str, list[DiffItem]] = {}
@@ -95,7 +96,7 @@ async def analyze_impact(diff_id: int) -> list[ImpactItem]:
     finally:
         duration_ms = int((time.perf_counter() - start) * 1000)
         log_audit(
-            tool_name="impact_analyze",
+            tool_name="analyze_impact",
             inputs={"diff_id": diff_id},
             outputs={"impact_count": len(impacts)},
             spec_id=None,

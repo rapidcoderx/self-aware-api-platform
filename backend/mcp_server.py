@@ -1,4 +1,4 @@
-# MCP Server — stdio transport, registers 3 tools for the Self-Aware API Platform
+# MCP Server — stdio transport, registers 5 tools for the Self-Aware API Platform
 
 import asyncio
 import json
@@ -16,7 +16,9 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
+from tools.spec_diff import diff_specs
 from tools.spec_get import get_endpoint
+from tools.impact_analyze import analyze_impact
 from tools.spec_search import search_endpoints
 from tools.spec_validate import validate_request
 
@@ -107,6 +109,44 @@ TOOLS: list[Tool] = [
             },
         },
     ),
+    Tool(
+        name="diff_specs",
+        description=(
+            "Compare requestBody schemas between two ingested spec versions. "
+            "Classifies every field-level change as BREAKING or NON_BREAKING with a change_type."
+        ),
+        inputSchema={
+            "type": "object",
+            "required": ["old_spec_id", "new_spec_id"],
+            "properties": {
+                "old_spec_id": {
+                    "type": "integer",
+                    "description": "ID of the older spec version",
+                },
+                "new_spec_id": {
+                    "type": "integer",
+                    "description": "ID of the newer spec version",
+                },
+            },
+        },
+    ),
+    Tool(
+        name="analyze_impact",
+        description=(
+            "Analyze downstream service impact for breaking changes stored in a diff. "
+            "Cross-references specs/dependencies.yaml to return affected services, teams, and severity."
+        ),
+        inputSchema={
+            "type": "object",
+            "required": ["diff_id"],
+            "properties": {
+                "diff_id": {
+                    "type": "integer",
+                    "description": "The diff ID (from diff_specs output) to analyze",
+                },
+            },
+        },
+    ),
 ]
 
 
@@ -162,6 +202,31 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 TextContent(
                     type="text",
                     text=json.dumps(result.model_dump(), default=str),
+                )
+            ]
+
+        elif name == "diff_specs":
+            diffs = await diff_specs(
+                old_spec_id=arguments["old_spec_id"],
+                new_spec_id=arguments["new_spec_id"],
+            )
+            return [
+                TextContent(
+                    type="text",
+                    text=json.dumps(
+                        [d.model_dump() for d in diffs], default=str
+                    ),
+                )
+            ]
+
+        elif name == "analyze_impact":
+            impacts = await analyze_impact(diff_id=arguments["diff_id"])
+            return [
+                TextContent(
+                    type="text",
+                    text=json.dumps(
+                        [i.model_dump() for i in impacts], default=str
+                    ),
                 )
             ]
 

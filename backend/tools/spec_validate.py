@@ -1,5 +1,6 @@
 # MCP tool: validate_request — validate a payload against an operationId's requestBody schema
 
+import asyncio
 import logging
 import time
 from typing import Optional
@@ -46,7 +47,7 @@ async def validate_request(
 
     try:
         # Fetch directly from DB — avoids double audit log entry that get_endpoint() would produce
-        row = fetch_endpoint_row(operation_id, spec_id)
+        row = await asyncio.to_thread(fetch_endpoint_row, operation_id, spec_id)
         if row is None:
             raise ValueError(f"Endpoint '{operation_id}' not found in spec_id={spec_id}")
 

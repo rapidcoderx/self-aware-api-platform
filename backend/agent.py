@@ -495,7 +495,7 @@ async def run_self_heal(
     start = time.perf_counter()
 
     # ── Lazy import to avoid circular dependency ────────────────────────────────
-    from tools.spec_diff import diff_specs, DiffItem  # noqa: F401
+    from tools.spec_diff import diff_specs  # noqa: F401
 
     # ── Step 1: Fetch schemas ───────────────────────────────────────────────────
     logger.info(f"Self-heal: fetching schemas for op={operation_id}")

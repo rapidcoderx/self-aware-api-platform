@@ -1,5 +1,6 @@
 # MCP tool: search_endpoints — vector similarity search over ingested spec endpoints
 
+import asyncio
 import logging
 import time
 from typing import Optional
@@ -31,7 +32,7 @@ async def search_endpoints(
     limit: int = 5,
 ) -> list[EndpointSummary]:
     """
-    Embed `query` with Voyage AI voyage-3, run cosine search against pgvector,
+    Embed `query` with Voyage AI voyage-4, run cosine search against pgvector,
     return the top-N matching endpoints as EndpointSummary objects.
     Every call is logged to audit_logs.
     """
@@ -40,8 +41,8 @@ async def search_endpoints(
     error: Optional[str] = None
 
     try:
-        embedding = embed_single(query, input_type="query")
-        rows = cosine_search(embedding, spec_id, limit)
+        embedding = await asyncio.to_thread(embed_single, query, "query")
+        rows = await asyncio.to_thread(cosine_search, embedding, spec_id, limit)
         results = [
             EndpointSummary(
                 operation_id=row["operation_id"],

@@ -1,5 +1,6 @@
 # POST /api/specs/compare — compute and store a diff between two spec versions
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, HTTPException, status
@@ -36,6 +37,7 @@ class CompareResponse(BaseModel):
 @compare_router.post(
     "/api/specs/compare",
     response_model=CompareResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def compare_specs(request: CompareRequest) -> CompareResponse:
     """
@@ -49,14 +51,14 @@ async def compare_specs(request: CompareRequest) -> CompareResponse:
             detail="old_spec_id and new_spec_id must be different",
         )
 
-    old_spec = get_spec_by_id(request.old_spec_id)
+    old_spec = await asyncio.to_thread(get_spec_by_id, request.old_spec_id)
     if old_spec is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Spec id={request.old_spec_id} not found",
         )
 
-    new_spec = get_spec_by_id(request.new_spec_id)
+    new_spec = await asyncio.to_thread(get_spec_by_id, request.new_spec_id)
     if new_spec is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -75,12 +77,14 @@ async def compare_specs(request: CompareRequest) -> CompareResponse:
     breaking_count = sum(1 for d in diffs if d.breaking)
     non_breaking_count = sum(1 for d in diffs if not d.breaking)
 
+    serialised_diffs = [d.model_dump() for d in diffs]
     try:
-        diff_id = save_diff(
-            old_spec_id=request.old_spec_id,
-            new_spec_id=request.new_spec_id,
-            diffs=[d.model_dump() for d in diffs],
-            breaking_count=breaking_count,
+        diff_id = await asyncio.to_thread(
+            save_diff,
+            request.old_spec_id,
+            request.new_spec_id,
+            serialised_diffs,
+            breaking_count,
         )
     except Exception as exc:
         logger.error(f"save_diff failed: {exc}", exc_info=True)

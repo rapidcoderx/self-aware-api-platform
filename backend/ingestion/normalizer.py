@@ -14,6 +14,7 @@ def normalize_spec(spec_path: str) -> tuple[dict, list[dict]]:
     Parse and fully resolve (all $ref) an OpenAPI 3.x or Swagger 2.x spec.
     Returns (raw_resolved_spec_dict, list_of_canonical_endpoint_dicts).
     """
+    _reject_http_refs(spec_path)
     parser = prance.ResolvingParser(spec_path, strict=False)
     parser.parse()
     spec: dict = parser.specification
@@ -73,6 +74,17 @@ def normalize_spec(spec_path: str) -> tuple[dict, list[dict]]:
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
+
+def _reject_http_refs(spec_path: str) -> None:
+    """Raise ValueError if the spec contains any HTTP/HTTPS $ref (SSRF prevention)."""
+    with open(spec_path, "r", encoding="utf-8", errors="replace") as f:
+        content = f.read()
+    if re.search(r'\$ref\s*:\s*[\'"]?https?://', content, re.IGNORECASE):
+        raise ValueError(
+            "Spec contains an external HTTP $ref — blocked to prevent SSRF. "
+            "Only inline (#/components/…) and local file ($ref: './…') references are allowed."
+        )
+
 
 def _auto_operation_id(method: str, path: str) -> str:
     """Generate a deterministic operationId when the spec omits one."""

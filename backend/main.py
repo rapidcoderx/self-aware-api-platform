@@ -225,8 +225,15 @@ async def ingest_spec(
 @app.get("/api/specs", response_model=list[SpecListItem])
 async def list_all_specs() -> list[SpecListItem]:
     """List all ingested specs ordered by name and version."""
-    specs = await asyncio.to_thread(list_specs)
-    return [SpecListItem(**s) for s in specs]
+    try:
+        specs = await asyncio.to_thread(list_specs)
+        return [SpecListItem(**s) for s in specs]
+    except Exception as exc:
+        logger.error(f"Failed to list specs: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database unavailable",
+        )
 
 
 @app.get("/api/specs/impact/{diff_id}", response_model=list[ImpactItem])
@@ -251,4 +258,11 @@ async def get_spec_impact(diff_id: int) -> list[ImpactItem]:
 @app.get("/api/audit-logs", response_model=list[AuditLogEntry])
 async def get_audit_logs(limit: int = 20) -> list[AuditLogEntry]:
     """Return the most recent audit log entries (newest-first)."""
-    return await asyncio.to_thread(list_audit_logs, max(1, min(limit, 100)))
+    try:
+        return await asyncio.to_thread(list_audit_logs, max(1, min(limit, 100)))
+    except Exception as exc:
+        logger.error(f"Failed to fetch audit logs: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database unavailable",
+        )

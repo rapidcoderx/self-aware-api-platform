@@ -1,5 +1,6 @@
 # POST /api/chat — agent chat endpoint
 
+import asyncio
 import logging
 from typing import Optional
 
@@ -56,7 +57,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
     then returns a structured answer with provenance.
     """
     # Verify spec exists
-    spec_info = get_spec_by_id(request.spec_id)
+    spec_info = await asyncio.to_thread(get_spec_by_id, request.spec_id)
     if spec_info is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

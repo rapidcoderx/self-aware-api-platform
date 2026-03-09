@@ -1,6 +1,7 @@
 # MCP tool: diff_specs — compare requestBody schemas between two spec versions
 # Classifies changes as BREAKING or NON_BREAKING using canonical change_type values
 
+import asyncio
 import logging
 import time
 from typing import Optional
@@ -45,8 +46,8 @@ async def diff_specs(old_spec_id: int, new_spec_id: int) -> list[DiffItem]:
     diffs: list[DiffItem] = []
 
     try:
-        old_endpoints = _fetch_endpoints_for_spec(old_spec_id)
-        new_endpoints = _fetch_endpoints_for_spec(new_spec_id)
+        old_endpoints = await asyncio.to_thread(_fetch_endpoints_for_spec, old_spec_id)
+        new_endpoints = await asyncio.to_thread(_fetch_endpoints_for_spec, new_spec_id)
 
         # Compare operations present in the old spec
         for op_id, old_ep in old_endpoints.items():
@@ -102,7 +103,7 @@ async def diff_specs(old_spec_id: int, new_spec_id: int) -> list[DiffItem]:
     finally:
         duration_ms = int((time.perf_counter() - start) * 1000)
         log_audit(
-            tool_name="spec_diff",
+            tool_name="diff_specs",
             inputs={"old_spec_id": old_spec_id, "new_spec_id": new_spec_id},
             outputs={
                 "total_changes": len(diffs),
