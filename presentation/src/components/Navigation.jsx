@@ -34,17 +34,28 @@ export default function Navigation() {
     return () => obs.forEach(o => o.disconnect())
   }, [])
 
-  // Arrow key navigation
+  // Arrow key + presentation clicker navigation
+  // Clicker remotes (Logitech R400/R800/Spotlight): PageDown = next, PageUp = prev
+  // Some clickers also send Space (next) or B/Period (black screen — ignored)
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)
+      if (isInput) return
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
         e.preventDefault()
         const next = Math.min(activeIndexRef.current + 1, SECTIONS.length - 1)
         scrollTo(SECTIONS[next].id)
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
         e.preventDefault()
         const prev = Math.max(activeIndexRef.current - 1, 0)
         scrollTo(SECTIONS[prev].id)
+      } else if (e.key === 'Home') {
+        e.preventDefault()
+        scrollTo(SECTIONS[0].id)
+      } else if (e.key === 'End') {
+        e.preventDefault()
+        scrollTo(SECTIONS[SECTIONS.length - 1].id)
       } else if (e.key === 'Escape') {
         setShowInfo(false)
       }
@@ -120,7 +131,8 @@ export default function Navigation() {
             <p className="font-body text-star-blue text-sm">Sathishkumar Krishnan</p>
             <p className="font-body text-star-blue text-sm">Vinotha Sathishkumar</p>
             <div className="mt-3 pt-3 border-t border-accent-primary/15">
-              <p className="font-mono text-accent-primary/50 text-xs">← → arrow keys to navigate</p>
+              <p className="font-mono text-accent-primary/50 text-xs">← → or PageDown/PageUp to navigate</p>
+              <p className="font-mono text-accent-primary/30 text-xs mt-1">Clicker remote supported ✓</p>
             </div>
           </motion.div>
         )}
