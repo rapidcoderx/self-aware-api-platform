@@ -1197,13 +1197,13 @@ TOOLS (unit tested)                   ← verified by checklist_final.py ✅ 5/5
   [x] impact_analyze    → 3 HIGH services for diff_id               (onboarding-service, crm-integration, mobile-app-backend)
 
 FRONTEND                              ← manual verification required
-  [ ] Chat → answer with tool chips + provenance badge
-  [ ] Tool chips are collapsible (not all expanded by default)
-  [ ] SpecUploader → drag-drop + version badge on success
-  [ ] DiffPanel → red BREAKING + yellow NON-BREAKING rows + labels
-  [ ] MigrationPanel → before (red) + after (green Valid ✓) + export
-  [ ] Audit log modal → all tool calls visible
-  [ ] Responsible AI panel → 6 green checkmarks
+  [x] Chat → answer with tool chips + provenance badge
+  [x] Tool chips are collapsible (not all expanded by default)
+  [x] SpecUploader → drag-drop + version badge on success
+  [x] DiffPanel → red BREAKING + yellow NON-BREAKING rows + labels
+  [x] MigrationPanel → before (red) + after (green Valid ✓) + export
+  [x] Audit log modal → all tool calls visible
+  [x] Responsible AI panel → 6 green checkmarks
 
 PRESENTATION                          ← verified by checklist_final.py ✅ 4/4 (2026-03-09)
   [x] npm run build → zero errors     (dist/index.html created exit_code=0)

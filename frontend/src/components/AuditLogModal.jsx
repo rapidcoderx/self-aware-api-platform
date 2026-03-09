@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 
 function formatTimestamp(ts) {
@@ -30,29 +30,30 @@ export default function AuditLogModal({ open, onClose }) {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const mountedRef = useRef(true)
 
-  useEffect(() => () => { mountedRef.current = false }, [])
-
-  const fetchLogs = useCallback(async () => {
-    if (!mountedRef.current) return
+  const doFetch = useCallback(async (signal) => {
     setLoading(true)
     setError(null)
     try {
-      const res = await axios.get('/api/audit-logs?limit=20')
-      if (mountedRef.current) setLogs(res.data)
+      const res = await axios.get('/api/audit-logs?limit=20', signal ? { signal } : {})
+      setLogs(res.data)
     } catch (err) {
-      if (mountedRef.current) setError(
-        err.response?.data?.detail || err.message || 'Failed to load audit logs'
-      )
+      if (!axios.isCancel(err)) {
+        setError(err.response?.data?.detail || err.message || 'Failed to load audit logs')
+      }
     } finally {
-      if (mountedRef.current) setLoading(false)
+      setLoading(false)
     }
   }, [])
 
+  const fetchLogs = useCallback(() => { doFetch() }, [doFetch])
+
   useEffect(() => {
-    if (open) fetchLogs()
-  }, [open, fetchLogs])
+    if (!open) return
+    const controller = new AbortController()
+    doFetch(controller.signal)
+    return () => controller.abort()
+  }, [open, doFetch])
 
   // Close on Escape key
   useEffect(() => {

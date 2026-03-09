@@ -103,6 +103,12 @@ export default function ChatPanel({ specId, onResult }) {
 
   const canSend = input.trim().length > 0
 
+  const clearChat = useCallback(() => {
+    setMessages([])
+    setInput('')
+    setError(null)
+  }, [])
+
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim()
     if (!trimmed || loading || !specId) return
@@ -203,6 +209,19 @@ export default function ChatPanel({ specId, onResult }) {
             disabled={!specId || loading}
             className="flex-1 rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={clearChat}
+              disabled={loading}
+              title="Clear chat"
+              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
           <button
             type="button"
             onClick={sendMessage}
