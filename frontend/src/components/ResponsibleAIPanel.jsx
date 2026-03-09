@@ -54,19 +54,22 @@ export default function ResponsibleAIPanel({
     }
   }, [])
 
-  // Check if audit log has any entries — run once on mount only
+  // Poll audit log — turns green as soon as the first tool call is logged
   useEffect(() => {
     let cancelled = false
-    axios
-      .get('/api/audit-logs?limit=1')
-      .then((res) => {
-        if (!cancelled) setAuditLogActive(Array.isArray(res.data) && res.data.length > 0)
-      })
-      .catch(() => {
-        if (!cancelled) setAuditLogActive(false)
-      })
+    const check = () => {
+      axios
+        .get('/api/audit-logs?limit=1')
+        .then((res) => {
+          if (!cancelled) setAuditLogActive(Array.isArray(res.data) && res.data.length > 0)
+        })
+        .catch(() => {})
+    }
+    check()
+    const interval = setInterval(check, 5000)
     return () => {
       cancelled = true
+      clearInterval(interval)
     }
   }, [])
 
@@ -75,6 +78,11 @@ export default function ResponsibleAIPanel({
       label: 'Sandbox Mode Active',
       active: sandboxActive,
       description: 'All API calls route to Prism mock, not production',
+    },
+    {
+      label: 'Audit Log Active',
+      active: auditLogActive,
+      description: 'Every MCP tool call logged with inputs, outputs, duration',
     },
     {
       label: 'Schema Validation Enforced',
@@ -90,11 +98,6 @@ export default function ResponsibleAIPanel({
       label: 'Human-in-the-Loop for Migration',
       active: true,
       description: 'Self-heal output requires explicit confirmation',
-    },
-    {
-      label: 'Audit Log Active',
-      active: auditLogActive,
-      description: 'All MCP tool calls logged with inputs, outputs, duration',
     },
     {
       label: 'Breaking Changes Explained',
