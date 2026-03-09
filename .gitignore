@@ -22,6 +22,8 @@ dist/
 # Logs
 *.log
 bootstrap.log
+deploy/logs/
+deploy/pids/
 
 # IDE
 .vscode/
