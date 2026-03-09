@@ -1,0 +1,154 @@
+openapi: 3.0.3
+info:
+  title: Savings Account API
+  version: 3.0.0
+  description: >
+    Savings account management API — v3.
+    BREAKING CHANGES from v2:
+      1. depositToSavings — `verificationCode` is now required (REQUIRED_ADDED)
+      2. depositToSavings — `amount` type changed from number to string (TYPE_CHANGED)
+      3. listSavingsTransactions endpoint REMOVED (ENDPOINT_REMOVED)
+paths:
+  /savings:
+    post:
+      operationId: createSavingsAccount
+      summary: Open a new savings account
+      tags: [savings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountHolder, initialDeposit, currency, taxId]
+              properties:
+                accountHolder:
+                  type: string
+                  example: "Jane Smith"
+                initialDeposit:
+                  type: number
+                  example: 1000.00
+                currency:
+                  type: string
+                  enum: [CAD, USD, GBP]
+                  example: CAD
+                taxId:
+                  type: string
+                  example: "SIN-123-456-789"
+                interestRate:
+                  type: object
+                  required: [rate, compoundingPeriod]
+                  properties:
+                    rate:
+                      type: number
+                      example: 2.5
+                    compoundingPeriod:
+                      type: string
+                      enum: [monthly, quarterly, annually]
+                      example: monthly
+                accountTier:
+                  type: string
+                  enum: [standard, premium, elite]
+                  default: standard
+      responses:
+        '201':
+          description: Savings account opened
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:     { type: string }
+                  accountHolder: { type: string }
+                  status:        { type: string }
+    get:
+      operationId: listSavingsAccounts
+      summary: List savings accounts
+      tags: [savings]
+      parameters:
+        - name: accountTier
+          in: query
+          schema: { type: string, enum: [standard, premium, elite] }
+        - name: currency
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of savings accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    accountId:     { type: string }
+                    accountHolder: { type: string }
+                    accountTier:   { type: string }
+                    balance:       { type: number }
+  /savings/{accountId}:
+    get:
+      operationId: getSavingsAccount
+      summary: Get savings account details
+      tags: [savings]
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Savings account detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:     { type: string }
+                  accountHolder: { type: string }
+                  balance:       { type: number }
+                  interestRate:  { type: object }
+                  accountTier:   { type: string }
+  # BREAKING: listSavingsTransactions endpoint REMOVED in v3
+  # Clients must migrate to the new unified /transactions service
+  /savings/{accountId}/deposit:
+    post:
+      operationId: depositToSavings
+      summary: Deposit funds into savings account
+      tags: [savings]
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              # BREAKING: verificationCode is now required
+              # BREAKING: amount type changed from number to string (monetary string e.g. "500.00")
+              required: [amount, verificationCode]
+              properties:
+                amount:
+                  type: string
+                  description: Monetary amount as a decimal string to avoid floating-point precision issues
+                  example: "500.00"
+                verificationCode:
+                  type: string
+                  description: One-time verification code from authenticator app — mandatory for fraud prevention
+                  example: "847261"
+                reference:
+                  type: string
+                  example: "payroll-2026-01"
+      responses:
+        '200':
+          description: Deposit successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactionId: { type: string }
+                  newBalance:    { type: string }

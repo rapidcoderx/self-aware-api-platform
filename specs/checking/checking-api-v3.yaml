@@ -1,0 +1,155 @@
+openapi: 3.0.3
+info:
+  title: Checking Account API
+  version: 3.0.0
+  description: >
+    Checking account management API — v3.
+    BREAKING CHANGES from v2:
+      1. transferFunds — `mfaToken` is now required (REQUIRED_ADDED)
+      2. transferFunds — `amount` type changed from number to string (TYPE_CHANGED)
+      3. transferFunds — `transferPriority` added as required (REQUIRED_ADDED)
+paths:
+  /checking:
+    post:
+      operationId: createCheckingAccount
+      summary: Open a new checking account
+      tags: [checking]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountHolder, currency, overdraftLimit, businessRegistrationNumber]
+              properties:
+                accountHolder:
+                  type: string
+                  example: "Acme Corp"
+                currency:
+                  type: string
+                  enum: [CAD, USD, GBP]
+                  example: CAD
+                overdraftLimit:
+                  type: number
+                  example: 500.00
+                businessRegistrationNumber:
+                  type: string
+                  example: "ON-8877665"
+                accountTier:
+                  type: string
+                  enum: [business, corporate, premium]
+                  default: business
+      responses:
+        '201':
+          description: Checking account opened
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:     { type: string }
+                  accountHolder: { type: string }
+                  status:        { type: string }
+    get:
+      operationId: listCheckingAccounts
+      summary: List checking accounts
+      tags: [checking]
+      parameters:
+        - name: accountTier
+          in: query
+          schema: { type: string, enum: [business, corporate, premium] }
+      responses:
+        '200':
+          description: List of checking accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    accountId:     { type: string }
+                    accountHolder: { type: string }
+                    accountTier:   { type: string }
+                    balance:       { type: number }
+  /checking/{accountId}/transfer:
+    post:
+      operationId: transferFunds
+      summary: Transfer funds from checking account
+      tags: [checking]
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              # BREAKING: mfaToken is now required
+              # BREAKING: amount changed from number to string
+              # BREAKING: transferPriority is now required
+              required: [destinationAccountId, amount, mfaToken, transferPriority]
+              properties:
+                destinationAccountId:
+                  type: string
+                  example: "ACC-9988776655"
+                amount:
+                  type: string
+                  description: Monetary amount as decimal string — changed from number to avoid precision issues
+                  example: "250.00"
+                mfaToken:
+                  type: string
+                  description: Multi-factor authentication token — required for all transfers above threshold
+                  example: "623841"
+                transferPriority:
+                  type: string
+                  enum: [standard, express, urgent]
+                  description: Settlement priority — required to select clearing network
+                  example: standard
+                memo:
+                  type: string
+                  example: "Invoice #INV-2026-0042"
+      responses:
+        '200':
+          description: Transfer initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transferId: { type: string }
+                  status:     { type: string }
+  /checking/{accountId}/transactions:
+    get:
+      operationId: listCheckingTransactions
+      summary: List transactions for a checking account
+      tags: [checking]
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: fromDate
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    transactionId: { type: string }
+                    amount:        { type: string }
+                    type:          { type: string, enum: [debit, credit] }
+                    date:          { type: string, format: date-time }
+                    memo:          { type: string }

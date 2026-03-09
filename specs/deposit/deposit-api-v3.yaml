@@ -1,0 +1,171 @@
+openapi: 3.0.3
+info:
+  title: Term Deposit API
+  version: 3.0.0
+  description: >
+    Term deposit management API — v3.
+    BREAKING CHANGES from v2:
+      1. renewDeposit endpoint REMOVED (ENDPOINT_REMOVED) — use createDeposit with autoRenew
+      2. redeemDeposit — `earlyTerminationFee` type changed from number to object (TYPE_CHANGED)
+      3. redeemDeposit — `regulatoryConfirmation` added as required (REQUIRED_ADDED)
+paths:
+  /deposits:
+    post:
+      operationId: createDeposit
+      summary: Create a new term deposit
+      tags: [deposits]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountHolder, principalAmount, termMonths, rateType, depositCategory]
+              properties:
+                accountHolder:
+                  type: string
+                  example: "Jane Smith"
+                principalAmount:
+                  type: string
+                  example: "10000.00"
+                currency:
+                  type: string
+                  enum: [CAD, USD, GBP]
+                  default: CAD
+                termMonths:
+                  type: integer
+                  enum: [3, 6, 12, 24, 36, 60]
+                  example: 12
+                rateType:
+                  type: string
+                  enum: [fixed, promotional, stepped]
+                  example: fixed
+                depositCategory:
+                  type: string
+                  enum: [retail, institutional, registered]
+                  example: retail
+                autoRenew:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Term deposit created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  depositId:       { type: string }
+                  accountHolder:   { type: string }
+                  maturityDate:    { type: string, format: date }
+                  interestRate:    { type: number }
+                  status:          { type: string }
+    get:
+      operationId: listDeposits
+      summary: List term deposits
+      tags: [deposits]
+      parameters:
+        - name: rateType
+          in: query
+          schema: { type: string, enum: [fixed, promotional, stepped] }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, matured, cancelled] }
+      responses:
+        '200':
+          description: List of term deposits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    depositId:       { type: string }
+                    accountHolder:   { type: string }
+                    principalAmount: { type: string }
+                    termMonths:      { type: integer }
+                    rateType:        { type: string }
+                    depositCategory: { type: string }
+                    maturityDate:    { type: string, format: date }
+  /deposits/{depositId}:
+    get:
+      operationId: getDeposit
+      summary: Get term deposit details
+      tags: [deposits]
+      parameters:
+        - name: depositId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Term deposit details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  depositId:       { type: string }
+                  accountHolder:   { type: string }
+                  principalAmount: { type: string }
+                  interestRate:    { type: number }
+                  termMonths:      { type: integer }
+                  rateType:        { type: string }
+                  depositCategory: { type: string }
+                  maturityDate:    { type: string, format: date }
+                  autoRenew:       { type: boolean }
+                  status:          { type: string }
+  # BREAKING: /deposits/{depositId}/renew REMOVED in v3
+  # Clients must set autoRenew=true on createDeposit instead
+  /deposits/{depositId}/redeem:
+    post:
+      operationId: redeemDeposit
+      summary: Redeem or early-terminate a term deposit
+      tags: [deposits]
+      parameters:
+        - name: depositId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              # BREAKING: regulatoryConfirmation is now required
+              # BREAKING: earlyTerminationFee changed from number to object
+              required: [destinationAccountId, regulatoryConfirmation]
+              properties:
+                destinationAccountId:
+                  type: string
+                  example: "ACC-1122334455"
+                regulatoryConfirmation:
+                  type: string
+                  description: Compliance confirmation code issued by compliance officer — now mandatory
+                  example: "COMP-2026-8841"
+                earlyTerminationFee:
+                  type: object
+                  description: Structured fee breakdown — changed from flat number
+                  properties:
+                    amount:
+                      type: string
+                      example: "50.00"
+                    currency:
+                      type: string
+                      example: CAD
+                    waiverCode:
+                      type: string
+                      description: Optional waiver code to reduce fee
+                      example: "WAIVER-2026-001"
+      responses:
+        '200':
+          description: Deposit redeemed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redemptionAmount: { type: string }
+                  status:           { type: string }

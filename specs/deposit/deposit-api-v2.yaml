@@ -1,0 +1,198 @@
+openapi: 3.0.3
+info:
+  title: Term Deposit API
+  version: 2.0.0
+  description: >
+    Term deposit management API — v2.
+    BREAKING CHANGES from v1:
+      1. createDeposit — `depositCategory` added as required (REQUIRED_ADDED)
+      2. createDeposit — `rateType` enum removes 'variable', adds 'stepped' (ENUM_CHANGED)
+      3. createDeposit — `principalAmount` type changed from number to string (TYPE_CHANGED)
+paths:
+  /deposits:
+    post:
+      operationId: createDeposit
+      summary: Create a new term deposit
+      tags: [deposits]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              # BREAKING: depositCategory is now required
+              # BREAKING: rateType enum changed (variable removed, stepped added)
+              # BREAKING: principalAmount changed from number to string
+              required: [accountHolder, principalAmount, termMonths, rateType, depositCategory]
+              properties:
+                accountHolder:
+                  type: string
+                  example: "Jane Smith"
+                principalAmount:
+                  type: string
+                  description: Principal as decimal string — changed from number to avoid precision issues
+                  example: "10000.00"
+                currency:
+                  type: string
+                  enum: [CAD, USD, GBP]
+                  default: CAD
+                termMonths:
+                  type: integer
+                  enum: [3, 6, 12, 24, 36, 60]
+                  example: 12
+                rateType:
+                  type: string
+                  enum: [fixed, promotional, stepped]   # 'variable' removed, 'stepped' added
+                  example: fixed
+                depositCategory:
+                  type: string
+                  enum: [retail, institutional, registered]
+                  description: Deposit category required for regulatory reporting
+                  example: retail
+                autoRenew:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Term deposit created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  depositId:       { type: string }
+                  accountHolder:   { type: string }
+                  maturityDate:    { type: string, format: date }
+                  interestRate:    { type: number }
+                  status:          { type: string }
+    get:
+      operationId: listDeposits
+      summary: List term deposits
+      tags: [deposits]
+      parameters:
+        - name: rateType
+          in: query
+          schema: { type: string, enum: [fixed, promotional, stepped] }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, matured, cancelled] }
+      responses:
+        '200':
+          description: List of term deposits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    depositId:       { type: string }
+                    accountHolder:   { type: string }
+                    principalAmount: { type: string }
+                    termMonths:      { type: integer }
+                    rateType:        { type: string }
+                    depositCategory: { type: string }
+                    maturityDate:    { type: string, format: date }
+  /deposits/{depositId}:
+    get:
+      operationId: getDeposit
+      summary: Get term deposit details
+      tags: [deposits]
+      parameters:
+        - name: depositId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Term deposit details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  depositId:       { type: string }
+                  accountHolder:   { type: string }
+                  principalAmount: { type: string }
+                  interestRate:    { type: number }
+                  termMonths:      { type: integer }
+                  rateType:        { type: string }
+                  depositCategory: { type: string }
+                  maturityDate:    { type: string, format: date }
+                  autoRenew:       { type: boolean }
+                  status:          { type: string }
+  /deposits/{depositId}/renew:
+    post:
+      operationId: renewDeposit
+      summary: Renew a maturing term deposit
+      tags: [deposits]
+      parameters:
+        - name: depositId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [termMonths, rateType]
+              properties:
+                termMonths:
+                  type: integer
+                  enum: [3, 6, 12, 24, 36, 60]
+                  example: 12
+                rateType:
+                  type: string
+                  enum: [fixed, promotional, stepped]
+                  example: fixed
+                topUpAmount:
+                  type: string
+                  example: "1000.00"
+      responses:
+        '200':
+          description: Deposit renewed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  newDepositId:  { type: string }
+                  maturityDate:  { type: string, format: date }
+                  interestRate:  { type: number }
+  /deposits/{depositId}/redeem:
+    post:
+      operationId: redeemDeposit
+      summary: Redeem or early-terminate a term deposit
+      tags: [deposits]
+      parameters:
+        - name: depositId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destinationAccountId]
+              properties:
+                destinationAccountId:
+                  type: string
+                  example: "ACC-1122334455"
+                earlyTerminationFee:
+                  type: number
+                  description: Accepted fee for early termination
+                  example: 50.00
+      responses:
+        '200':
+          description: Deposit redeemed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redemptionAmount: { type: string }
+                  status:           { type: string }

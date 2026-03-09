@@ -1,0 +1,182 @@
+openapi: 3.0.3
+info:
+  title: Term Deposit API
+  version: 1.0.0
+  description: Term deposit (GIC/CD) management API — baseline release
+paths:
+  /deposits:
+    post:
+      operationId: createDeposit
+      summary: Create a new term deposit
+      tags: [deposits]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountHolder, principalAmount, termMonths, rateType]
+              properties:
+                accountHolder:
+                  type: string
+                  example: "Jane Smith"
+                principalAmount:
+                  type: number
+                  example: 10000.00
+                currency:
+                  type: string
+                  enum: [CAD, USD, GBP]
+                  default: CAD
+                termMonths:
+                  type: integer
+                  enum: [3, 6, 12, 24, 36, 60]
+                  example: 12
+                rateType:
+                  type: string
+                  enum: [fixed, variable, promotional]
+                  example: fixed
+                autoRenew:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Term deposit created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  depositId:       { type: string }
+                  accountHolder:   { type: string }
+                  maturityDate:    { type: string, format: date }
+                  interestRate:    { type: number }
+                  status:          { type: string }
+    get:
+      operationId: listDeposits
+      summary: List term deposits
+      tags: [deposits]
+      parameters:
+        - name: rateType
+          in: query
+          schema: { type: string, enum: [fixed, variable, promotional] }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, matured, cancelled] }
+      responses:
+        '200':
+          description: List of term deposits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    depositId:       { type: string }
+                    accountHolder:   { type: string }
+                    principalAmount: { type: number }
+                    termMonths:      { type: integer }
+                    rateType:        { type: string }
+                    maturityDate:    { type: string, format: date }
+  /deposits/{depositId}:
+    get:
+      operationId: getDeposit
+      summary: Get term deposit details
+      tags: [deposits]
+      parameters:
+        - name: depositId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Term deposit details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  depositId:       { type: string }
+                  accountHolder:   { type: string }
+                  principalAmount: { type: number }
+                  interestRate:    { type: number }
+                  termMonths:      { type: integer }
+                  rateType:        { type: string }
+                  maturityDate:    { type: string, format: date }
+                  autoRenew:       { type: boolean }
+                  status:          { type: string }
+  /deposits/{depositId}/renew:
+    post:
+      operationId: renewDeposit
+      summary: Renew a maturing term deposit
+      tags: [deposits]
+      parameters:
+        - name: depositId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [termMonths, rateType]
+              properties:
+                termMonths:
+                  type: integer
+                  enum: [3, 6, 12, 24, 36, 60]
+                  example: 12
+                rateType:
+                  type: string
+                  enum: [fixed, variable, promotional]
+                  example: fixed
+                topUpAmount:
+                  type: number
+                  example: 1000.00
+      responses:
+        '200':
+          description: Deposit renewed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  newDepositId:  { type: string }
+                  maturityDate:  { type: string, format: date }
+                  interestRate:  { type: number }
+  /deposits/{depositId}/redeem:
+    post:
+      operationId: redeemDeposit
+      summary: Redeem or early-terminate a term deposit
+      tags: [deposits]
+      parameters:
+        - name: depositId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destinationAccountId]
+              properties:
+                destinationAccountId:
+                  type: string
+                  example: "ACC-1122334455"
+                earlyTerminationFee:
+                  type: number
+                  description: Accepted fee for early termination (if before maturity)
+                  example: 50.00
+      responses:
+        '200':
+          description: Deposit redeemed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redemptionAmount: { type: number }
+                  status:           { type: string }

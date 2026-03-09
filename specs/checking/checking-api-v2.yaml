@@ -1,0 +1,147 @@
+openapi: 3.0.3
+info:
+  title: Checking Account API
+  version: 2.0.0
+  description: >
+    Checking account management API — v2.
+    BREAKING CHANGES from v1:
+      1. createCheckingAccount — `overdraftLimit` promoted to required (REQUIRED_ADDED)
+      2. createCheckingAccount — `accountTier` enum removes 'basic', adds 'premium' (ENUM_CHANGED)
+      3. createCheckingAccount — `businessRegistrationNumber` added as required (REQUIRED_ADDED)
+paths:
+  /checking:
+    post:
+      operationId: createCheckingAccount
+      summary: Open a new checking account
+      tags: [checking]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              # BREAKING: overdraftLimit is now required
+              # BREAKING: businessRegistrationNumber is now required
+              # BREAKING: accountTier enum changed (basic removed, premium added)
+              required: [accountHolder, currency, overdraftLimit, businessRegistrationNumber]
+              properties:
+                accountHolder:
+                  type: string
+                  example: "Acme Corp"
+                currency:
+                  type: string
+                  enum: [CAD, USD, GBP]
+                  example: CAD
+                overdraftLimit:
+                  type: number
+                  description: Overdraft protection limit — now mandatory
+                  example: 500.00
+                businessRegistrationNumber:
+                  type: string
+                  description: Government business registration number — required for compliance
+                  example: "ON-8877665"
+                accountTier:
+                  type: string
+                  enum: [business, corporate, premium]   # 'basic' removed, 'premium' added
+                  default: business
+      responses:
+        '201':
+          description: Checking account opened
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:     { type: string }
+                  accountHolder: { type: string }
+                  status:        { type: string }
+    get:
+      operationId: listCheckingAccounts
+      summary: List checking accounts
+      tags: [checking]
+      parameters:
+        - name: accountTier
+          in: query
+          schema: { type: string, enum: [business, corporate, premium] }
+      responses:
+        '200':
+          description: List of checking accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    accountId:     { type: string }
+                    accountHolder: { type: string }
+                    accountTier:   { type: string }
+                    balance:       { type: number }
+  /checking/{accountId}/transfer:
+    post:
+      operationId: transferFunds
+      summary: Transfer funds from checking account
+      tags: [checking]
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destinationAccountId, amount]
+              properties:
+                destinationAccountId:
+                  type: string
+                  example: "ACC-9988776655"
+                amount:
+                  type: number
+                  example: 250.00
+                memo:
+                  type: string
+                  example: "Invoice #INV-2026-0042"
+      responses:
+        '200':
+          description: Transfer initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transferId: { type: string }
+                  status:     { type: string }
+  /checking/{accountId}/transactions:
+    get:
+      operationId: listCheckingTransactions
+      summary: List transactions for a checking account
+      tags: [checking]
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: fromDate
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    transactionId: { type: string }
+                    amount:        { type: number }
+                    type:          { type: string, enum: [debit, credit] }
+                    date:          { type: string, format: date-time }
+                    memo:          { type: string }
