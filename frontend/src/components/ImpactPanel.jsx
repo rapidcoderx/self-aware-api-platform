@@ -11,6 +11,7 @@ export default function ImpactPanel({ diffId, onImpactCount }) {
   const [impacts, setImpacts] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
     if (!diffId) return
@@ -46,56 +47,56 @@ export default function ImpactPanel({ diffId, onImpactCount }) {
 
   return (
     <div className="border-t border-gray-800">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-900/60 border-b border-gray-800">
-        <h2 className="text-xs font-semibold text-white uppercase tracking-wide">
-          Impact Analysis
-        </h2>
-        {!loading && impacts.length > 0 && (
-          <span className="text-xs text-gray-400">
-            {impacts.length} service{impacts.length !== 1 ? 's' : ''} affected
-          </span>
-        )}
-        {loading && (
+      {/* Header — click to collapse */}
+      <button
+        type="button"
+        onClick={() => setCollapsed((p) => !p)}
+        className="w-full flex items-center justify-between px-4 py-2 bg-gray-900/60 border-b border-gray-800 hover:bg-gray-800/60 transition-colors"
+        aria-expanded={!collapsed}
+      >
+        <div className="flex items-center gap-2">
           <svg
-            className="animate-spin w-3 h-3 text-indigo-400"
-            fill="none"
-            viewBox="0 0 24 24"
+            className={`w-3.5 h-3.5 text-gray-500 transition-transform ${collapsed ? '' : 'rotate-180'}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"
           >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-        )}
-      </div>
+          <h2 className="text-xs font-semibold text-white uppercase tracking-wide">
+            Impact Analysis
+          </h2>
+        </div>
+        <div className="flex items-center gap-2">
+          {!loading && impacts.length > 0 && (
+            <span className="text-xs text-gray-400">
+              {impacts.length} service{impacts.length !== 1 ? 's' : ''} affected
+            </span>
+          )}
+          {loading && (
+            <svg className="animate-spin w-3 h-3 text-indigo-400" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
+        </div>
+      </button>
 
-      {/* States */}
-      {loading && impacts.length === 0 && (
+      {/* States + rows — hidden when collapsed */}
+      {!collapsed && loading && impacts.length === 0 && (
         <div className="px-4 py-3 text-xs text-gray-500">Analysing downstream impact…</div>
       )}
 
-      {error && (
+      {!collapsed && error && (
         <div className="px-4 py-3 text-xs text-red-400">{error}</div>
       )}
 
-      {!loading && !error && impacts.length === 0 && (
+      {!collapsed && !loading && !error && impacts.length === 0 && (
         <div className="px-4 py-3 text-xs text-gray-500">
           No affected services found.
         </div>
       )}
 
       {/* Impact rows */}
-      {impacts.length > 0 && (
+      {!collapsed && impacts.length > 0 && (
         <div className="divide-y divide-gray-800/60">
           {impacts.map((impact) => (
             <div

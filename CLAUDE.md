@@ -298,7 +298,7 @@ Update this section as modules are completed.
 - [x] `MigrationPanel.jsx` (before/after payloads, export, confirm dialog)
 - [x] Responsible AI panel (audit log modal)
 - [x] Spec upload UI component
-- [ ] End-to-end demo rehearsal
+- [x] End-to-end demo rehearsal
 
 ---
 

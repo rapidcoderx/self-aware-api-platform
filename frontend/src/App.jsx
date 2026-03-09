@@ -118,7 +118,7 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
+    <div className="h-screen overflow-hidden bg-gray-950 flex flex-col">
       <header className="border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm px-4 py-3 flex flex-col gap-2 shrink-0">
         {/* Top row: title + actions */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -152,7 +152,7 @@ export default function App() {
                   className="rounded-md bg-gray-800 border border-gray-700 text-sm text-gray-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {specs.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name} v{s.version}</option>
+                    <option key={s.id} value={s.id}>{s.name}{s.version > 1 ? ` (rev ${s.version})` : ''}</option>
                   ))}
                 </select>
 
@@ -166,7 +166,7 @@ export default function App() {
                     >
                       <option value="">— select to compare —</option>
                       {specs.filter((s) => s.id !== specId).map((s) => (
-                        <option key={s.id} value={s.id}>{s.name} v{s.version}</option>
+                        <option key={s.id} value={s.id}>{s.name}{s.version > 1 ? ` (rev ${s.version})` : ''}</option>
                       ))}
                     </select>
                     <button
@@ -192,11 +192,11 @@ export default function App() {
       </header>
 
       <main className="flex-1 flex overflow-hidden">
-        <div className="flex-1 min-w-0 border-r border-gray-800">
+        <div className="flex-1 min-w-0 border-r border-gray-800 overflow-hidden">
           <ChatPanel specId={specId} onResult={handleChatResult} />
         </div>
         <div className="w-[440px] shrink-0 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             {diffData ? (
               <>
                 <DiffPanel

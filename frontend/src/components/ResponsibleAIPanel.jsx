@@ -36,7 +36,7 @@ export default function ResponsibleAIPanel({
 }) {
   const [sandboxActive, setSandboxActive] = useState(true)
   const [auditLogActive, setAuditLogActive] = useState(false)
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
 
   // Read sandbox mode from /health
   useEffect(() => {

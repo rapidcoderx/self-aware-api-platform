@@ -1,5 +1,16 @@
 import { useState } from 'react'
 
+function CollapseChevron({ collapsed }) {
+  return (
+    <svg
+      className={`w-3.5 h-3.5 text-gray-500 transition-transform ${collapsed ? '' : 'rotate-180'}`}
+      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  )
+}
+
 const CHANGE_TYPE_LABELS = {
   REQUIRED_ADDED: 'Required Added',
   FIELD_REMOVED: 'Field Removed',
@@ -81,6 +92,8 @@ function DiffRow({ item }) {
 }
 
 export default function DiffPanel({ diffData, impactCount, onClose }) {
+  const [collapsed, setCollapsed] = useState(false)
+
   if (!diffData) {
     return (
       <div className="h-full flex items-center justify-center p-6 text-center">
@@ -99,13 +112,21 @@ export default function DiffPanel({ diffData, impactCount, onClose }) {
   const nonBreakingDiffs = diffs.filter((d) => !d.breaking)
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 shrink-0">
-        <div>
-          <h2 className="text-sm font-semibold text-white">Spec Diff</h2>
-          <p className="text-xs text-gray-500 mt-0.5">diff_id={diff_id}</p>
-        </div>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+        <button
+          type="button"
+          onClick={() => setCollapsed((p) => !p)}
+          className="flex items-center gap-2 min-w-0 group"
+          aria-expanded={!collapsed}
+        >
+          <CollapseChevron collapsed={collapsed} />
+          <div className="text-left">
+            <h2 className="text-sm font-semibold text-white group-hover:text-blue-300 transition-colors">Spec Diff</h2>
+            <p className="text-xs text-gray-500 mt-0.5">diff_id={diff_id}</p>
+          </div>
+        </button>
         {onClose && (
           <button
             type="button"
@@ -120,8 +141,8 @@ export default function DiffPanel({ diffData, impactCount, onClose }) {
         )}
       </div>
 
-      {/* Summary bar */}
-      <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-900/60 border-b border-gray-800 shrink-0 text-xs">
+      {/* Summary bar — always visible so you know what's in the diff even when collapsed */}
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-900/60 border-b border-gray-800 text-xs">
         <span
           className={`inline-flex items-center gap-1 font-semibold ${
             breaking_count > 0 ? 'text-red-400' : 'text-gray-400'
@@ -139,8 +160,8 @@ export default function DiffPanel({ diffData, impactCount, onClose }) {
         </span>
       </div>
 
-      {/* Diff rows — scrollable */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      {/* Diff rows — collapsible */}
+      {!collapsed && <div className="overflow-y-auto max-h-72 p-3 space-y-2">
         {diffs.length === 0 && (
           <div className="text-center text-gray-500 text-sm py-8">
             No schema changes detected between these versions.
@@ -168,7 +189,7 @@ export default function DiffPanel({ diffData, impactCount, onClose }) {
             ))}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   )
 }
