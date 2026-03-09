@@ -91,13 +91,29 @@ export default function App() {
   }, [specId, compareSpecId, specs])
 
   const handleSpecUploaded = useCallback((uploadedSpec) => {
-    // Refresh the specs list and auto-select the newly uploaded spec
+    // Optimistically add the uploaded spec to the list and select it immediately
+    // so the dropdown updates without needing a page refresh.
+    const newEntry = {
+      id: uploadedSpec.spec_id,
+      name: uploadedSpec.name,
+      version: uploadedSpec.version,
+      hash: '',
+      created_at: new Date().toISOString(),
+    }
+    setSpecs((prev) => {
+      // Replace if same id already exists (re-ingest), otherwise append
+      const without = prev.filter((s) => s.id !== newEntry.id)
+      return [...without, newEntry]
+    })
+    setSpecId(uploadedSpec.spec_id)
+    setSpecsError(null)    // clear any stale error so the dropdown renders
+
+    // Background sync to pick up server-canonical data (hash, timestamps, etc.)
     axios.get('/api/specs').then((res) => {
       if (!mountedRef.current) return
       setSpecs(res.data)
-      setSpecId(uploadedSpec.spec_id)
     }).catch(() => {
-      // Silently ignore — user can still select manually
+      // Optimistic entry above is already in place — silently ignore
     })
   }, [])
 
