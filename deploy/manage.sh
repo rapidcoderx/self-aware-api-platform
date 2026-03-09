@@ -3,11 +3,11 @@
 # Self-Aware API Platform — Master Management Script
 # =============================================================================
 # Usage:
-#   ./deploy/manage.sh start         Start backend, frontend, and Prism
+#   ./deploy/manage.sh start         Start backend and frontend
 #   ./deploy/manage.sh stop          Stop all running services
 #   ./deploy/manage.sh restart       Stop then start all services
 #   ./deploy/manage.sh status        Show which services are running
-#   ./deploy/manage.sh logs [svc]    Tail logs (backend|frontend|prism|all)
+#   ./deploy/manage.sh logs [svc]    Tail logs (backend|frontend|all)
 #   ./deploy/manage.sh clean-db      Wipe demo data, reset sequences (keeps schema)
 #   ./deploy/manage.sh demo-reset    clean-db + start (one-command demo prep)
 # =============================================================================
@@ -19,23 +19,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/backend"
 FRONTEND_DIR="$ROOT_DIR/frontend"
-SPECS_DIR="$ROOT_DIR/specs"
 LOGS_DIR="$SCRIPT_DIR/logs"
 PIDS_DIR="$SCRIPT_DIR/pids"
 DB_CLEAN_SQL="$SCRIPT_DIR/db-clean.sql"
 
 BACKEND_PID="$PIDS_DIR/backend.pid"
 FRONTEND_PID="$PIDS_DIR/frontend.pid"
-PRISM_PID="$PIDS_DIR/prism.pid"
 
 BACKEND_LOG="$LOGS_DIR/backend.log"
 FRONTEND_LOG="$LOGS_DIR/frontend.log"
-PRISM_LOG="$LOGS_DIR/prism.log"
 
 # ── Ports ──────────────────────────────────────────────────────────────────
 BACKEND_PORT=8000
 FRONTEND_PORT=5173
-PRISM_PORT=4010
 
 # ── DB connection (reads from .env if present) ─────────────────────────────
 ENV_FILE="$BACKEND_DIR/.env"
@@ -171,34 +167,12 @@ cmd_start() {
     wait_for_port "$FRONTEND_PORT" "Frontend" || true
   fi
 
-  # ── Prism mock server ─────────────────────────────────────────────────────
-  if is_running "$PRISM_PID"; then
-    warn "Prism already running (pid $(cat "$PRISM_PID")). Skipping."
-  else
-    log "Starting Prism mock server on port $PRISM_PORT..."
-    local spec_file="$SPECS_DIR/banking-api-v1.yaml"
-    if [[ ! -f "$spec_file" ]]; then
-      err "Spec file not found: $spec_file"
-      exit 1
-    fi
-    (
-      cd "$ROOT_DIR"
-      npx --yes @stoplight/prism-cli mock "$spec_file" \
-        --port "$PRISM_PORT" \
-        --host 0.0.0.0 \
-        > "$PRISM_LOG" 2>&1 &
-      echo $! > "$PRISM_PID"
-    )
-    wait_for_port "$PRISM_PORT" "Prism" || true
-  fi
-
   section "All services launched"
   cmd_status
   echo ""
   echo -e "  ${BOLD}Frontend:${RESET}  ${GREEN}http://localhost:$FRONTEND_PORT${RESET}"
   echo -e "  ${BOLD}Backend:${RESET}   ${GREEN}http://localhost:$BACKEND_PORT${RESET}"
   echo -e "  ${BOLD}API Docs:${RESET}  ${GREEN}http://localhost:$BACKEND_PORT/docs${RESET}"
-  echo -e "  ${BOLD}Prism:${RESET}     ${GREEN}http://localhost:$PRISM_PORT${RESET}"
   echo ""
 }
 
@@ -208,10 +182,9 @@ cmd_stop() {
   local pids
   stop_service "$BACKEND_PID"  "Backend"
   stop_service "$FRONTEND_PID" "Frontend"
-  stop_service "$PRISM_PID"    "Prism"
 
   # Belt-and-suspenders: kill anything still holding the ports
-  for port in $BACKEND_PORT $FRONTEND_PORT $PRISM_PORT; do
+  for port in $BACKEND_PORT $FRONTEND_PORT; do
     pids=$(lsof -i ":$port" -sTCP:LISTEN -t 2>/dev/null || true)
     if [[ -n "$pids" ]]; then
       warn "Port $port still in use by pids [$pids] — sending SIGTERM"
@@ -229,7 +202,6 @@ cmd_status() {
 
   check_svc "Backend"  "$BACKEND_PID"  "$BACKEND_PORT"
   check_svc "Frontend" "$FRONTEND_PID" "$FRONTEND_PORT"
-  check_svc "Prism"    "$PRISM_PID"    "$PRISM_PORT"
 
   # PostgreSQL
   if pg_isready -h "$DB_HOST" -p "$DB_PORT" -q 2>/dev/null; then
@@ -253,19 +225,15 @@ cmd_logs() {
       [[ -f "$FRONTEND_LOG" ]] || { err "No log yet for frontend — has it been started?"; exit 1; }
       tail -f "$FRONTEND_LOG"
       ;;
-    prism)
-      [[ -f "$PRISM_LOG" ]] || { err "No log yet for prism — has it been started?"; exit 1; }
-      tail -f "$PRISM_LOG"
-      ;;
     all)
       section "Tailing all logs (Ctrl+C to exit)"
-      for _log in "$BACKEND_LOG" "$FRONTEND_LOG" "$PRISM_LOG"; do
+      for _log in "$BACKEND_LOG" "$FRONTEND_LOG"; do
         [[ -f "$_log" ]] || { warn "Log file missing, skipping: $_log"; }
       done
-      tail -f "$BACKEND_LOG" "$FRONTEND_LOG" "$PRISM_LOG" 2>/dev/null || true
+      tail -f "$BACKEND_LOG" "$FRONTEND_LOG" 2>/dev/null || true
       ;;
     *)
-      err "Unknown service '$target'. Use: backend | frontend | prism | all"
+      err "Unknown service '$target'. Use: backend | frontend | all"
       exit 1
       ;;
   esac
@@ -341,11 +309,11 @@ cmd_help() {
   echo ""
   echo -e "${BOLD}Self-Aware API Platform — manage.sh${RESET}"
   echo ""
-  echo -e "  ${CYAN}./deploy/manage.sh start${RESET}            Start backend, frontend and Prism"
+  echo -e "  ${CYAN}./deploy/manage.sh start${RESET}            Start backend and frontend"
   echo -e "  ${CYAN}./deploy/manage.sh stop${RESET}             Stop all running services"
   echo -e "  ${CYAN}./deploy/manage.sh restart${RESET}          Stop then start all services"
   echo -e "  ${CYAN}./deploy/manage.sh status${RESET}           Show service status"
-  echo -e "  ${CYAN}./deploy/manage.sh logs [svc]${RESET}       Tail logs (backend|frontend|prism|all)"
+  echo -e "  ${CYAN}./deploy/manage.sh logs [svc]${RESET}       Tail logs (backend|frontend|all)"
   echo -e "  ${CYAN}./deploy/manage.sh clean-db${RESET}         Wipe demo data (interactive confirm)"
   echo -e "  ${CYAN}./deploy/manage.sh demo-reset${RESET}       clean-db + start (full one-command reset)"
   echo ""
