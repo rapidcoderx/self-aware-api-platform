@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <- Extend the \`history\` filter to exclude \`blocked:true\` messages alongside the Dark background -->
+  <!-- Dark background -->
   <rect width="32" height="32" rx="7" fill="#020409"/>
-  <- Extend the \`history\` filter to exclude \`blocked:true\` messages alongside the Orbital rings -->
+  <!-- Orbital rings -->
   <ellipse cx="16" cy="16" rx="11" ry="5.5" stroke="#00d4ff" stroke-width="1.3" fill="none" opacity="0.75" transform="rotate(30 16 16)"/>
   <ellipse cx="16" cy="16" rx="11" ry="5.5" stroke="#7c3aed" stroke-width="1.3" fill="none" opacity="0.75" transform="rotate(-30 16 16)"/>
-  <- Extend the \`history\` filter to exclude \`blocked:true\` messages alongside the Core dot -->
+  <!-- Core dot -->
   <circle cx="16" cy="16" r="3" fill="#00d4ff"/>
-  <- Extend the \`history\` filter to exclude \`blocked:true\` messages alongside the Glow -->
-  <circle cx="16" cy="16" r="3" fill="#00d4ff" opacity="0.35" filter="blur(2px)"/>
+  <!-- Glow -->
+  <circle cx="16" cy="16" r="5" fill="#00d4ff" opacity="0.2"/>
 </svg>

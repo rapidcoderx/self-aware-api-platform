@@ -34,7 +34,7 @@ export default function LiveDemo() {
         <p className="font-mono text-star-blue/70 text-sm mb-8">
           Upload v2 → Breaking change detected → Migration plan generated
         </p>
-        <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+        <a href="https://github.com/rapidcoderx/self-aware-api-platform" target="_blank" rel="noopener noreferrer"
           className="inline-block font-mono text-star-white border border-star-white/30 rounded-xl px-8 py-3 text-sm tracking-wider hover:border-star-white/70 hover:bg-star-white/5 transition-colors duration-200">
           View on GitHub →
         </a>

@@ -1117,11 +1117,12 @@ vercel --prod   # production URL
 ```
 
 **Checklist:**
-- [ ] All 10 sections render without errors
-- [ ] Star field canvas is animating (not frozen)
-- [ ] No images — all visuals are CSS/SVG/JSX
-- [ ] Mobile view (375px) — single column, no overflow
-- [ ] Vercel production URL opens in < 3 seconds on a mobile connection
+- [x] All 10 sections render without errors
+- [x] Star field canvas is animating (not frozen)
+- [x] No images — all visuals are CSS/SVG/JSX
+- [x] Mobile view (375px) — single column, no overflow
+- [x] Vercel production URL opens in < 3 seconds on a mobile connection
+      https://hackathon-nu-blush.vercel.app/
 
 ---
 

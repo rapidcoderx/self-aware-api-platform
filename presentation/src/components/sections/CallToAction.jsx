@@ -48,6 +48,12 @@ export default function CallToAction() {
             by
             <span className="font-display font-semibold text-star-white/60">The Autonomous Duo</span>
           </p>
+          <p className="font-mono text-star-blue/30 text-xs mt-3">
+            <a href="https://github.com/rapidcoderx/self-aware-api-platform" target="_blank" rel="noopener noreferrer"
+              className="hover:text-accent-primary/70 transition-colors duration-200">
+              github.com/rapidcoderx/self-aware-api-platform ↗
+            </a>
+          </p>
         </div>
       </div>
     </section>
