@@ -4,6 +4,8 @@ import asyncio
 import json
 import logging
 import os
+import re
+import time
 from typing import Any, Optional
 
 import anthropic
@@ -12,8 +14,8 @@ from pydantic import BaseModel
 
 load_dotenv()
 
-from storage.schema_store import get_db, get_spec_by_id
-from tools.spec_get import get_endpoint
+from storage.schema_store import get_db, get_spec_by_id, log_audit
+from tools.spec_get import get_endpoint, EndpointDetail
 from tools.spec_search import search_endpoints
 from tools.spec_validate import validate_request
 
@@ -357,3 +359,326 @@ def _extract_provenance(
         spec_version=spec_info["version"],
         operation_id=operation_id,
     )
+
+
+# ── Self-heal constants & helpers ──────────────────────────────────────────────
+
+SELF_HEAL_MAX_REVISIONS = 3
+
+SELF_HEAL_SYSTEM_PROMPT = """You are a migration engineer for the Self-Aware API Platform.
+
+Your task: generate a valid JSON payload for an API operation that has breaking changes between two spec versions.
+
+WORKFLOW (follow exactly):
+1. Call spec_get_endpoint to retrieve the NEW spec schema for the operation
+2. Inspect the required fields, their types, and allowed enum values carefully
+3. Construct a payload that satisfies ALL required fields with realistic values
+4. Call spec_validate_request to confirm the payload is valid for the NEW spec
+5. If validation fails, read the error hints carefully and revise the payload, then validate again
+6. Once spec_validate_request returns valid=true, respond ONLY with this exact JSON structure:
+
+{"payload": {<your valid payload here>}}
+
+RULES:
+- Use realistic example values (e.g. "BC-1234567" for company registration, "Acme Corp" for names)
+- Never use placeholder text like "string" or "example_field"
+- The payload MUST pass spec_validate_request before you respond
+- Respond with ONLY the JSON object — no prose, no markdown fences
+"""
+
+# Only expose the two tools needed for self-heal — no search tool
+SELF_HEAL_TOOLS: list[dict[str, Any]] = [
+    t for t in TOOL_DEFINITIONS
+    if t["name"] in {"spec_get_endpoint", "spec_validate_request"}
+]
+
+
+def _build_before_payload(old_detail: EndpointDetail) -> dict:
+    """
+    Construct a payload valid for the old spec but likely invalid for the new spec.
+    Fills every required field with a typed dummy value.
+    For enum fields, uses the first enum value (which may have been removed in v2).
+    """
+    schema = old_detail.request_body_schema
+    if not schema:
+        return {}
+
+    properties: dict = schema.get("properties", {})
+    required: list[str] = schema.get("required", [])
+    payload: dict = {}
+
+    for field in required:
+        prop = properties.get(field, {})
+        field_type = prop.get("type", "string")
+        enum_vals: list = prop.get("enum", [])
+
+        if enum_vals:
+            payload[field] = enum_vals[0]  # first value — may be removed in new spec
+        elif field_type == "string":
+            # Use a readable sentinel name so before/after contrast is obvious in demo
+            payload[field] = f"Example {field.replace('_', ' ').title()}"
+        elif field_type == "integer":
+            payload[field] = 1
+        elif field_type == "number":
+            payload[field] = 1.0
+        elif field_type == "boolean":
+            payload[field] = True
+        elif field_type == "array":
+            payload[field] = []
+        elif field_type == "object":
+            payload[field] = {}
+        else:
+            payload[field] = "example"
+
+    return payload
+
+
+def _build_migration_steps(diffs: "list[DiffItem]") -> list[str]:
+    """
+    Generate human-readable migration steps from a list of DiffItem objects.
+    Returns sentences suitable for display to a developer.
+    """
+    steps: list[str] = []
+    for d in diffs:
+        if d.change_type == "REQUIRED_ADDED":
+            steps.append(
+                f"Add required field '{d.field}' to all requests for {d.method} {d.path}. "
+                f"Expected value type: {d.new_value or 'string'} — use a real value (not null)."
+            )
+        elif d.change_type == "ENUM_CHANGED":
+            steps.append(
+                f"Update all uses of '{d.field}' in {d.method} {d.path}: "
+                f"old allowed values [{d.old_value}] → new allowed values [{d.new_value}]. "
+                f"Replace any removed values with a currently supported one."
+            )
+        elif d.change_type == "FIELD_REMOVED":
+            steps.append(
+                f"Remove '{d.field}' from payloads sent to {d.method} {d.path} — "
+                f"this field no longer exists in the new spec."
+            )
+        elif d.change_type == "TYPE_CHANGED":
+            steps.append(
+                f"Change the type of '{d.field}' in {d.method} {d.path} "
+                f"from {d.old_value} to {d.new_value}."
+            )
+        elif d.change_type == "ENDPOINT_REMOVED":
+            steps.append(
+                f"Remove all client calls to {d.method} {d.path} — "
+                f"this endpoint has been removed in the new spec version."
+            )
+        elif d.change_type == "FIELD_ADDED":
+            steps.append(
+                f"Optionally include the new field '{d.field}' in payloads for "
+                f"{d.method} {d.path} (non-breaking addition)."
+            )
+    return steps if steps else ["No breaking changes require migration for this operation."]
+
+
+# ── Self-heal loop ─────────────────────────────────────────────────────────────
+
+async def run_self_heal(
+    old_spec_id: int, new_spec_id: int, operation_id: str
+) -> dict:
+    """
+    Generate a migration plan for one operation between two spec versions.
+
+    Steps:
+    1. Fetch old + new endpoint schemas via get_endpoint (each call logged to audit_logs)
+    2. Compute breaking diffs for this operation only
+    3. Build before_payload (valid for old spec, invalid for new) + validate against new
+    4. Use a Claude tool_use loop (max SELF_HEAL_MAX_REVISIONS) to generate a valid after_payload
+    5. Return: before_payload, before_validation, after_payload, after_validation, migration_steps
+
+    Raises RuntimeError if after_payload cannot be validated within the revision limit.
+    Every spec_get and spec_validate call is logged to audit_logs by the tool itself.
+    """
+    start = time.perf_counter()
+
+    # ── Lazy import to avoid circular dependency ────────────────────────────────
+    from tools.spec_diff import diff_specs, DiffItem  # noqa: F401
+
+    # ── Step 1: Fetch schemas ───────────────────────────────────────────────────
+    logger.info(f"Self-heal: fetching schemas for op={operation_id}")
+    old_detail = await get_endpoint(operation_id, old_spec_id)
+
+    # ── Step 2: Get breaking diffs for this operation ───────────────────────────
+    all_diffs = await diff_specs(old_spec_id, new_spec_id)
+    op_diffs = [d for d in all_diffs if d.operation_id == operation_id]
+    breaking_diffs = [d for d in op_diffs if d.breaking]
+    logger.info(f"Self-heal: {len(breaking_diffs)} breaking changes for op={operation_id}")
+
+    # ── Step 3: Build before_payload and validate against NEW spec ──────────────
+    before_payload = _build_before_payload(old_detail)
+    before_val_result = await validate_request(operation_id, before_payload, new_spec_id)
+    before_validation = before_val_result.model_dump()
+    logger.info(
+        f"Self-heal: before_payload valid={before_validation['valid']} "
+        f"errors={len(before_validation['errors'])}"
+    )
+
+    # ── Step 4: Claude tool_use loop to generate a valid after_payload ──────────
+    breaking_summary = "; ".join(
+        f"{d.change_type} on '{d.field}' ({d.old_value!r} → {d.new_value!r})"
+        for d in breaking_diffs
+    ) or "No breaking changes found"
+
+    user_message = (
+        f"Generate a migration payload for operation '{operation_id}'.\n\n"
+        f"NEW spec_id: {new_spec_id}  (use this for all tool calls)\n"
+        f"OLD payload (INVALID for new spec): {json.dumps(before_payload)}\n"
+        f"Breaking changes: {breaking_summary}\n\n"
+        f"Requirements:\n"
+        f"1. Call spec_get_endpoint(operation_id='{operation_id}', spec_id={new_spec_id}) "
+        f"to inspect the new schema\n"
+        f"2. Construct an after_payload with ALL required fields including new ones\n"
+        f"3. Call spec_validate_request to confirm it is valid\n"
+        f"4. Respond ONLY with: {{\"payload\": {{...}}}}"
+    )
+
+    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    messages: list[dict[str, Any]] = [{"role": "user", "content": user_message}]
+
+    after_payload: dict = {}
+    after_validation: dict = {"valid": False, "errors": []}
+
+    for revision in range(SELF_HEAL_MAX_REVISIONS):
+        logger.info(f"Self-heal revision {revision + 1}/{SELF_HEAL_MAX_REVISIONS}")
+
+        response = await asyncio.to_thread(
+            client.messages.create,
+            model=MODEL,
+            max_tokens=2048,
+            system=SELF_HEAL_SYSTEM_PROMPT,
+            tools=SELF_HEAL_TOOLS,
+            messages=messages,
+        )
+
+        if response.stop_reason == "end_turn":
+            # Claude responded with text — extract the payload JSON
+            extracted: dict = {}
+            for block in response.content:
+                if block.type == "text":
+                    text = block.text.strip()
+                    # Strip any markdown fences Claude might have added
+                    text = re.sub(r"```(?:json)?\s*", "", text).strip().rstrip("`")
+                    try:
+                        parsed = json.loads(text)
+                        extracted = parsed.get("payload", parsed)
+                    except (json.JSONDecodeError, ValueError):
+                        # Fallback: find first JSON object in the text
+                        m = re.search(r'\{.*\}', text, re.DOTALL)
+                        if m:
+                            try:
+                                parsed = json.loads(m.group())
+                                extracted = parsed.get("payload", parsed)
+                            except json.JSONDecodeError:
+                                pass
+
+            if extracted:
+                # Always do a final validation ourselves (source of truth)
+                final_val = await validate_request(operation_id, extracted, new_spec_id)
+                after_validation = final_val.model_dump()
+                if after_validation["valid"]:
+                    after_payload = extracted
+                    logger.info(
+                        f"Self-heal: after_payload valid on revision {revision + 1}"
+                    )
+                    break
+
+            # Payload was invalid — give Claude the error hints and loop again
+            messages.append({"role": "assistant", "content": response.content})
+            messages.append({
+                "role": "user",
+                "content": (
+                    f"The payload failed validation: {json.dumps(after_validation)}. "
+                    f"Fix the errors using the hints and try again. "
+                    f"Remember to call spec_validate_request before responding."
+                ),
+            })
+            continue
+
+        if response.stop_reason == "tool_use":
+            messages.append({"role": "assistant", "content": response.content})
+            tool_results: list[dict[str, Any]] = []
+
+            for block in response.content:
+                if block.type != "tool_use":
+                    continue
+                try:
+                    result_json = await _dispatch_tool(block.name, block.input)
+                    is_error = False
+
+                    # Track successful spec_validate_request calls
+                    if block.name == "spec_validate_request":
+                        result_data = json.loads(result_json)
+                        if result_data.get("valid"):
+                            after_payload = block.input.get("payload", {})
+                            after_validation = result_data
+                            logger.info(
+                                f"Self-heal: tool validated after_payload on revision {revision + 1}"
+                            )
+                except Exception as exc:
+                    logger.error(f"Self-heal tool {block.name} error: {exc}", exc_info=True)
+                    result_json = json.dumps({"error": str(exc)})
+                    is_error = True
+
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": result_json,
+                    "is_error": is_error,
+                })
+
+            messages.append({"role": "user", "content": tool_results})
+
+            # If Claude already validated the payload via tool call, we're done
+            if after_validation.get("valid"):
+                break
+
+    if not after_validation.get("valid"):
+        logger.warning(
+            f"Self-heal: op={operation_id} could not produce a valid after_payload "
+            f"after {SELF_HEAL_MAX_REVISIONS} revisions"
+        )
+        raise RuntimeError(
+            f"Self-heal could not produce a valid payload for '{operation_id}' "
+            f"after {SELF_HEAL_MAX_REVISIONS} revisions"
+        )
+
+    # ── Step 5: Build migration steps from breaking diffs ──────────────────────
+    migration_steps = _build_migration_steps(breaking_diffs)
+
+    duration_ms = int((time.perf_counter() - start) * 1000)
+    log_audit(
+        tool_name="run_self_heal",
+        inputs={
+            "old_spec_id": old_spec_id,
+            "new_spec_id": new_spec_id,
+            "operation_id": operation_id,
+        },
+        outputs={
+            "before_valid": before_validation.get("valid"),
+            "after_valid": after_validation.get("valid"),
+            "migration_steps_count": len(migration_steps),
+        },
+        spec_id=new_spec_id,
+        duration_ms=duration_ms,
+    )
+
+    logger.info(
+        f"Self-heal complete: op={operation_id} "
+        f"before_valid={before_validation.get('valid')} "
+        f"after_valid={after_validation.get('valid')} "
+        f"duration_ms={duration_ms}"
+    )
+
+    return {
+        "old_spec_id": old_spec_id,
+        "new_spec_id": new_spec_id,
+        "operation_id": operation_id,
+        "before_payload": before_payload,
+        "before_validation": before_validation,
+        "after_payload": after_payload,
+        "after_validation": after_validation,
+        "migration_steps": migration_steps,
+    }

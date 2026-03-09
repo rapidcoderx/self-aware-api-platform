@@ -834,68 +834,105 @@ psql selfaware_api -c "
 
 ---
 
-**TODO 6.1 — Self-heal loop in `agent.py`**
+**TODO 6.1 — Self-heal loop in `agent.py`** ✅ DONE
 
-Add `run_self_heal(old_spec_id, new_spec_id, operation_id)` to `agent.py`.
+Added `run_self_heal(old_spec_id, new_spec_id, operation_id)` alongside `run_agent()`.
 
-```
-/build-module backend/agent.py
-Context: add run_self_heal() alongside existing run_agent(). 
-See HACKATHON.md section 7.3 for the exact flow.
-```
+Key implementation details:
+- `SELF_HEAL_MAX_REVISIONS = 3` — separate revision guard from `MAX_ITERATIONS`
+- `SELF_HEAL_TOOLS` — subset of tools: `spec_get_endpoint` + `spec_validate_request` only
+- `SELF_HEAL_SYSTEM_PROMPT` — instructs Claude to call `spec_validate_request` before responding
+- `_build_before_payload(old_detail)` — constructs payload valid for old spec (uses first enum value)
+- `_build_migration_steps(diffs)` — produces human-readable sentences from `DiffItem` list
+- `log_audit("run_self_heal", ...)` — full audit log entry with after_valid result
 
 Exit check:
 ```bash
-python -c "
+cd /Users/sathishkr/self-aware-api-platform/backend
+.venv/bin/python -c "
+import sys; sys.path.insert(0, '.')
+from dotenv import load_dotenv; load_dotenv('.env')
+from storage.schema_store import get_db
+with get_db() as conn:
+    cur = conn.cursor()
+    cur.execute('SELECT id FROM specs WHERE name=%s ORDER BY version', ('BankingAPI',))
+    rows = cur.fetchall(); old_spec_id, new_spec_id = rows[0][0], rows[1][0]
 import asyncio
 from agent import run_self_heal
-plan = asyncio.run(run_self_heal(1, 2, 'createAccount'))
-
+plan = asyncio.run(run_self_heal(old_spec_id, new_spec_id, 'createAccount'))
 assert 'before_payload' in plan
 assert 'after_payload' in plan
 assert plan['after_validation']['valid'] == True, f'After payload invalid: {plan}'
 assert 'companyRegistrationNumber' in str(plan['after_payload'])
 assert len(plan['migration_steps']) >= 1
-
 print('Self-heal OK')
-print('Before valid:', plan.get('before_validation', {}).get('valid'))  # → False
-print('After valid:', plan['after_validation']['valid'])                # → True
+print('Before valid:', plan['before_validation']['valid'])   # → False
+print('After valid:', plan['after_validation']['valid'])     # → True
 "
 ```
 
 ---
 
-**TODO 6.2 — Wire `POST /api/agent/self-heal`**
-```
-/build-module backend/routes/selfheal.py
-# Register in main.py
-```
+**TODO 6.2 — Wire `POST /api/agent/self-heal`** ✅ DONE
+
+Created `backend/routes/selfheal.py` and registered `selfheal_router` in `main.py`.
+
+- `SelfHealRequest` model: `{old_spec_id, new_spec_id, operation_id}`
+- `SelfHealResponse` model: full plan with before/after payloads, validation, steps
+- HTTP 422 for `ValueError` (bad operation_id), HTTP 503 for max-iterations exceeded
+- No `detail=str(e)` leakage — generic error messages on HTTP 500
+
 Exit check:
 ```bash
+# Auto-detect spec IDs from DB
+OLD=$(psql selfaware_api -t -c "SELECT id FROM specs WHERE name='BankingAPI' ORDER BY version LIMIT 1;" | tr -d ' ')
+NEW=$(psql selfaware_api -t -c "SELECT id FROM specs WHERE name='BankingAPI' ORDER BY version DESC LIMIT 1;" | tr -d ' ')
 curl -s -X POST http://localhost:8000/api/agent/self-heal \
   -H "Content-Type: application/json" \
-  -d '{"old_spec_id": 1, "new_spec_id": 2, "operation_id": "createAccount"}' | python -m json.tool
+  -d "{\"old_spec_id\": $OLD, \"new_spec_id\": $NEW, \"operation_id\": \"createAccount\"}" | python -m json.tool
 # Must contain:
 # "before_payload": {...} — missing companyRegistrationNumber
 # "after_payload": {..., "companyRegistrationNumber": "BC-1234567"}
 # "after_validation": {"valid": true, "errors": []}
-# "migration_steps": ["Add required field: companyRegistrationNumber"]
+# "migration_steps": ["Add required field: companyRegistrationNumber ..."]
 ```
 
 ---
 
-**TODO 6.3 — `frontend/src/components/MigrationPanel.jsx`**
+**TODO 6.3 — `frontend/src/components/MigrationPanel.jsx`** ✅ DONE
+
+Key features implemented:
+- Auto-selects first breaking operation from `diffData.diffs`
+- "Generate Migration Plan" button → POST `/api/agent/self-heal`
+- Loading spinner + error state
+- Before payload in red-tinted box (with invalid badge + error list)
+- After payload in green-tinted box (with "✓ Valid" badge)
+- Numbered migration steps list
+- "Export as JSON" → `URL.createObjectURL` download (not console.log)
+- "Apply Migration" → confirmation dialog (sandbox notice, no auto-apply)
+- "Reset" button to regenerate
+- Stacked below `DiffPanel` in `App.jsx` (both visible when diff is present)
+
+---
+
+**TODO 6.4 — Phase 6 gate test** ✅ DONE
+
+Run the full Phase 6 exit gate:
+```bash
+cd /Users/sathishkr/self-aware-api-platform/backend
+.venv/bin/python tests/test_phase6.py
+# All checks must show ✅ PASS
+# Live test in Section D calls Anthropic API — allow 15–45 seconds
+# Section F (route test) requires server on port 8000
 ```
-/build-module frontend/src/components/MigrationPanel.jsx
-```
-Exit check (manual):
-- Click "Generate Migration Plan"
-- Loading state shows during API call
-- Before payload renders in red-tinted box (labelled "Before — Invalid for v2")
-- After payload renders in green-tinted box with "Valid ✓" badge
-- Migration steps list renders below both payloads
-- "Export as JSON" button downloads the plan as a `.json` file
-- "Apply Migration" button shows a confirmation dialog — does NOT auto-apply
+
+Sections:
+- **A** — `agent.py` static checks (22 checks)
+- **B** — `selfheal` route static checks (14 checks)
+- **C** — `MigrationPanel.jsx` static checks (14 checks)
+- **D** — Live `run_self_heal` test: before invalid → after valid
+- **E** — Audit chain DB check: `spec_get_endpoint` + `spec_validate_request × 2+` + `run_self_heal`
+- **F** — Live route test (optional — requires server)
 
 ---
 
@@ -909,14 +946,27 @@ Switch to **api-platform-reviewer** agent:
 /review-module frontend/src/components/MigrationPanel.jsx
 ```
 
-**Blockers to fix before Phase 7:**
-- [ ] `run_self_heal` validates the after payload using `spec_validate_request` — not just generating it
-- [ ] If after payload fails validation: agent revises using error hints and re-validates (max 3 revision loops)
-- [ ] Self-heal function has its own iteration guard (max 3) — separate from `MAX_ITERATIONS`
-- [ ] `migration_steps` are human-readable sentences — not JSON field paths
-- [ ] MigrationPanel requires explicit user action — no auto-apply behaviour
-- [ ] "Export as JSON" actually triggers a download — not just logs to console
-- [ ] Audit log shows the full self-heal tool chain (spec_get → spec_validate × 2+)
+**Blockers to fix before Phase 7: ✅ ALL RESOLVED**
+- [x] `run_self_heal` validates the after payload using `spec_validate_request` — not just generating it
+- [x] If after payload fails validation: agent revises using error hints and re-validates (max 3 revision loops)
+- [x] Self-heal function has its own iteration guard (`SELF_HEAL_MAX_REVISIONS=3`) — separate from `MAX_ITERATIONS`
+- [x] `migration_steps` are human-readable sentences — not JSON field paths
+- [x] MigrationPanel requires explicit user action — no auto-apply behaviour
+- [x] "Export as JSON" triggers `URL.createObjectURL` download — not console.log
+- [x] Audit log shows the full self-heal tool chain (`spec_get_endpoint → spec_validate_request × 2+`)
+
+**Reviewer-flagged fixes applied (Phase 6 code review):**
+- [x] BLOCKER: `run_self_heal` raises `RuntimeError` if after_payload fails all revisions — route returns HTTP 503
+- [x] BLOCKER: Removed dead `new_detail = await get_endpoint(operation_id, new_spec_id)` line (unused, wasted audit log entry)
+- [x] WARNING: `get_spec_by_id()` wrapped in `asyncio.to_thread()` in `routes/selfheal.py` — no sync DB calls in async context
+- [x] WARNING: 404 detail no longer leaks spec ID — changed to `"Spec not found"` (was `f"Spec id={id} not found"`)
+- [x] WARNING: `SELF_HEAL_TOOLS` selected by tool name (`{\"spec_get_endpoint\", \"spec_validate_request\"}`) — not fragile index slicing
+- [x] WARNING: `ValidationResultSummary.errors` uses `list[ValidationError]` (imported from `tools.spec_validate`) — not loose `list[dict]`
+- [x] WARNING: MigrationPanel null-guard extended to also check `diffData.old_spec_id` and `diffData.new_spec_id`
+- [x] STYLE: `import re` and `import time` moved to top of `agent.py` — removed inline imports inside loop body
+- [x] STYLE: `_build_migration_steps(diffs: list[DiffItem])` — parameterised type hint added
+
+Gate result: **89/89 checks passed** (was 83/84 before review fixes)
 
 Full chain audit check:
 ```bash
@@ -924,10 +974,10 @@ psql selfaware_api -c "
   SELECT tool_name, created_at FROM audit_logs
   ORDER BY created_at DESC LIMIT 10;
 "
-# Should show the self-heal chain: spec_get → spec_validate (before) → spec_validate (after)
+# Should show: spec_get_endpoint → spec_validate_request (before) → spec_validate_request (after) → run_self_heal
 ```
 
-**Tick CLAUDE.md Day 2 items 6–7 only after this review passes.**
+**Tick CLAUDE.md Day 2 items 6–8 only after this review passes.**
 
 ---
 

@@ -26,6 +26,7 @@ from ingestion.embedder import embed_texts
 from ingestion.normalizer import normalize_spec
 from routes.chat import chat_router
 from routes.compare import compare_router
+from routes.selfheal import selfheal_router
 from storage.schema_store import (
     bulk_insert_endpoints,
     delete_spec,
@@ -75,6 +76,7 @@ app.add_middleware(
 # ── Register routers ───────────────────────────────────────────────────────────
 app.include_router(chat_router)
 app.include_router(compare_router)
+app.include_router(selfheal_router)
 
 
 # ── Pydantic response models ───────────────────────────────────────────────────

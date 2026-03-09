@@ -3,6 +3,7 @@ import axios from 'axios'
 import ChatPanel from './components/ChatPanel'
 import ValidationPanel from './components/ValidationPanel'
 import DiffPanel from './components/DiffPanel'
+import MigrationPanel from './components/MigrationPanel'
 
 export default function App() {
   const [specId, setSpecId] = useState(null)
@@ -143,10 +144,13 @@ export default function App() {
         </div>
         <div className="w-[420px] shrink-0 overflow-y-auto">
           {diffData ? (
-            <DiffPanel
-              diffData={diffData}
-              onClose={() => setDiffData(null)}
-            />
+            <>
+              <DiffPanel
+                diffData={diffData}
+                onClose={() => setDiffData(null)}
+              />
+              <MigrationPanel diffData={diffData} />
+            </>
           ) : (
             <ValidationPanel validation={lastValidation} endpoint={lastEndpoint} />
           )}
