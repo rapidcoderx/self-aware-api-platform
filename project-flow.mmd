@@ -1,0 +1,74 @@
+flowchart TD
+    U[User]
+    FE[Frontend Vite React Tailwind]
+    API[FastAPI Backend]
+    CHAT[Chat Route]
+    INGEST[Spec Ingest Route]
+    COMPARE[Spec Compare Route]
+    SELFHEAL[Self Heal Route]
+    AGENT[Claude Tool Use Orchestrator]
+    MCP[MCP Server Stdio]
+    T1[Tool spec_search]
+    T2[Tool spec_get_endpoint]
+    T3[Tool spec_validate_request]
+    T4[Tool diff_specs]
+    T5[Tool analyze_impact]
+
+    NORM[Normalizer prance jsonschema]
+    CHUNK[Chunker endpoint to text]
+    EMBED[Embedder Voyage 1024d]
+
+    STORE1[Schema Store psycopg2 JSONB]
+    STORE2[Vector Store pgvector cosine]
+    DB[(PostgreSQL 16 selfaware_api)]
+    AUDIT[(audit_logs table)]
+
+    SPEC1[Specs banking v1 v2 dependencies]
+    PRISM[Prism Mock Server 4010]
+    CLAUDE[Anthropic Claude Sonnet 4]
+    VOYAGE[Voyage Embeddings]
+
+    U --> FE
+    FE --> API
+
+    FE --> INGEST
+    FE --> CHAT
+    FE --> COMPARE
+    FE --> SELFHEAL
+
+    INGEST --> NORM --> CHUNK --> EMBED
+    EMBED --> VOYAGE
+    NORM --> STORE1
+    EMBED --> STORE1
+    STORE1 --> DB
+
+    CHAT --> AGENT
+    SELFHEAL --> AGENT
+    AGENT --> CLAUDE
+    AGENT --> MCP
+
+    MCP --> T1
+    MCP --> T2
+    MCP --> T3
+    MCP --> T4
+    MCP --> T5
+
+    T1 --> STORE2 --> DB
+    T2 --> STORE1
+    T3 --> STORE1
+    T4 --> STORE1
+    T5 --> SPEC1
+
+    T1 --> AUDIT
+    T2 --> AUDIT
+    T3 --> AUDIT
+    T4 --> AUDIT
+    T5 --> AUDIT
+    AUDIT --> DB
+
+    COMPARE --> T4
+    SELFHEAL --> T3
+    SELFHEAL --> T4
+    SELFHEAL --> T5
+
+    API --> PRISM
