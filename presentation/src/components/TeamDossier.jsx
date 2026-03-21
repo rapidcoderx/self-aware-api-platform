@@ -7,49 +7,31 @@ const TEAM = [
   {
     codename: 'ARCHITECT-01',
     name: 'Sathishkumar Krishnan',
-    designation: 'Industry Principal',
-    role: 'Platform Engineer & AI Systems',
+    designation: 'Finacle Technical Consultant',
     clearance: 'LEVEL-5',
     photo: satsPhoto,
     status: 'ACTIVE',
-    expertise: [
-      '> backend: FastAPI · PostgreSQL · pgvector',
-      '> agent: Claude tool_use · MCP SDK',
-      '> infra: uv · Docker · CI/CD',
-      '> spec: OpenAPI · prance · jsonschema',
-    ],
     tags: ['Backend', 'Agent Loop', 'Vector DB'],
   },
   {
     codename: 'ARCHITECT-02',
     name: 'Vinotha Sathishkumar',
-    designation: 'Senior Project Manager',
-    role: 'Frontend Engineer & UX Systems',
+    designation: 'Senior Java Developer',
     clearance: 'LEVEL-5',
     photo: editedPhoto,
     status: 'ACTIVE',
-    expertise: [
-      '> frontend: React 18 · Vite · Tailwind',
-      '> motion: Framer Motion · CSS FX',
-      '> ux: Component systems · Design tokens',
-      '> delivery: Agile · Stakeholder Mgmt',
-    ],
-    tags: ['Frontend', 'UX/UI', 'Project Mgmt'],
+    tags: ['Frontend', 'UX/UI', 'React'],
   },
 ]
 
-const SCANLINES =
-  'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 3px)'
-
 export default function TeamDossier({ open, onClose }) {
-  const [phase, setPhase] = useState('hidden') // hidden | classified | glitch | revealed
+  const [phase, setPhase] = useState('hidden') // hidden | classified | revealed
 
   useEffect(() => {
     if (!open) { setPhase('hidden'); return }
     setPhase('classified')
-    const t1 = setTimeout(() => setPhase('glitch'), 500)
-    const t2 = setTimeout(() => setPhase('revealed'), 1100)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    const t1 = setTimeout(() => setPhase('revealed'), 700)
+    return () => { clearTimeout(t1) }
   }, [open])
 
   useEffect(() => {
@@ -60,7 +42,7 @@ export default function TeamDossier({ open, onClose }) {
   }, [open, onClose])
 
   const revealed = phase === 'revealed'
-  const glitch = phase === 'glitch'
+  const glitch = false
 
   return (
     <AnimatePresence>
@@ -72,20 +54,14 @@ export default function TeamDossier({ open, onClose }) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{ background: 'rgba(2, 4, 9, 0.96)' }}
+          style={{ background: 'rgba(2, 4, 9, 0.97)' }}
           onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
         >
-          {/* Scanlines overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ backgroundImage: SCANLINES, opacity: 0.7 }}
-          />
-
           <motion.div
-            initial={{ scale: 0.9, y: 24 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 24 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
             className="relative z-10 w-full max-w-3xl"
           >
             {/* Close button */}
@@ -105,16 +81,14 @@ export default function TeamDossier({ open, onClose }) {
 
             {/* Header */}
             <div className="text-center mb-8">
-              <motion.p
-                className="font-mono text-xs tracking-[0.3em] mb-2 transition-colors duration-150"
-                style={{ color: revealed ? '#00d4ff' : glitch ? '#ffd700' : '#ff4757' }}
+              <p
+                className="font-mono text-xs tracking-[0.3em] mb-2"
+                style={{ color: revealed ? '#00d4ff' : '#ff4757' }}
               >
-                {glitch
-                  ? '// D█SSIER_L█ADING... DECRYPTING...'
-                  : revealed
-                    ? '// DOSSIER UNLOCKED — TEAM CREDENTIALS VERIFIED'
-                    : '// [CLASSIFIED] — LEVEL-5 CLEARANCE REQUIRED'}
-              </motion.p>
+                {revealed
+                  ? '// DOSSIER UNLOCKED — TEAM CREDENTIALS VERIFIED'
+                  : '// [CLASSIFIED] — LEVEL-5 CLEARANCE REQUIRED'}
+              </p>
 
               <h2
                 className="font-display font-black text-3xl md:text-4xl tracking-tight"
@@ -123,8 +97,6 @@ export default function TeamDossier({ open, onClose }) {
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
-                  filter: glitch ? 'blur(3px) brightness(1.5)' : 'none',
-                  transition: 'filter 0.15s',
                 }}
               >
                 {revealed ? 'THE AUTONOMOUS DUO' : '████ ██████████ ███'}
@@ -146,7 +118,6 @@ export default function TeamDossier({ open, onClose }) {
                   member={member}
                   delay={0.15 + i * 0.15}
                   revealed={revealed}
-                  glitch={glitch}
                 />
               ))}
             </div>
@@ -172,22 +143,19 @@ export default function TeamDossier({ open, onClose }) {
   )
 }
 
-function DossierCard({ member, delay, revealed, glitch }) {
+function DossierCard({ member, delay, revealed }) {
   const [imgError, setImgError] = useState(false)
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
+      transition={{ delay, duration: 0.28, ease: 'easeOut' }}
       className="rounded-2xl p-5 relative overflow-hidden"
       style={{
         background: 'rgba(10, 20, 40, 0.97)',
-        border: `1px solid ${glitch ? 'rgba(255,215,0,0.4)' : 'rgba(0,212,255,0.2)'}`,
-        boxShadow: glitch
-          ? '0 0 30px rgba(255,215,0,0.1)'
-          : 'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 40px rgba(0,0,0,0.7)',
-        transition: 'border-color 0.15s, box-shadow 0.15s',
+        border: '1px solid rgba(0,212,255,0.2)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 40px rgba(0,0,0,0.7)',
       }}
     >
       {/* Bracket corners */}
@@ -230,17 +198,15 @@ function DossierCard({ member, delay, revealed, glitch }) {
 
       {/* Photo + identity */}
       <div className="flex items-start gap-4 mb-4">
-        {/* Avatar with hologram ring */}
+        {/* Avatar */}
         <div className="relative flex-shrink-0 w-20 h-20">
           <div
-            className="w-20 h-20 rounded-full overflow-hidden relative z-10"
+            className="w-20 h-20 rounded-full overflow-hidden"
             style={{
-              boxShadow: glitch
-                ? '0 0 0 2px #ffd700, 0 0 24px rgba(255,215,0,0.4)'
-                : revealed
-                  ? '0 0 0 2px rgba(0,212,255,0.7), 0 0 20px rgba(0,212,255,0.3)'
-                  : '0 0 0 2px rgba(0,212,255,0.2)',
-              transition: 'box-shadow 0.15s',
+              boxShadow: revealed
+                ? '0 0 0 2px rgba(0,212,255,0.7), 0 0 16px rgba(0,212,255,0.25)'
+                : '0 0 0 2px rgba(0,212,255,0.2)',
+              transition: 'box-shadow 0.5s ease',
             }}
           >
             {!imgError ? (
@@ -250,8 +216,8 @@ function DossierCard({ member, delay, revealed, glitch }) {
                 onError={() => setImgError(true)}
                 className="w-full h-full object-cover"
                 style={{
-                  filter: revealed ? 'none' : 'grayscale(100%) brightness(0.25)',
-                  transition: 'filter 0.6s ease',
+                  filter: revealed ? 'none' : 'grayscale(100%) brightness(0.3)',
+                  transition: 'filter 0.5s ease',
                 }}
               />
             ) : (
@@ -265,37 +231,27 @@ function DossierCard({ member, delay, revealed, glitch }) {
               </div>
             )}
           </div>
-
-          {/* Spinning hologram ring — only when revealed */}
-          {revealed && (
-            <div
-              className="absolute inset-0 rounded-full animate-spin pointer-events-none"
-              style={{
-                background:
-                  'conic-gradient(from 0deg, transparent 70%, rgba(0,212,255,0.5) 85%, transparent 100%)',
-                animationDuration: '4s',
-              }}
-            />
-          )}
         </div>
 
-        {/* Name + designation + role + tags */}
+        {/* Name + designation + tags */}
         <div className="flex-1 min-w-0">
           <p
-            className="font-display font-bold text-sm leading-snug mb-0.5 transition-all duration-500"
-            style={{ color: revealed ? '#f8faff' : 'rgba(248,250,255,0.15)' }}
+            className="font-display font-bold text-sm leading-snug mb-0.5"
+            style={{
+              color: revealed ? '#f8faff' : 'rgba(248,250,255,0.15)',
+              transition: 'color 0.5s ease',
+            }}
           >
             {revealed ? member.name : '████████████████'}
           </p>
-          {/* Designation badge */}
           <p
-            className="font-mono text-xs mb-1 transition-all duration-500"
-            style={{ color: revealed ? '#ffd700' : 'rgba(255,215,0,0.1)' }}
+            className="font-mono text-xs mb-3"
+            style={{
+              color: revealed ? '#ffd700' : 'rgba(255,215,0,0.1)',
+              transition: 'color 0.5s ease',
+            }}
           >
             {revealed ? `// ${member.designation}` : '// ████████████████'}
-          </p>
-          <p className="font-body text-xs leading-relaxed mb-2" style={{ color: 'rgba(168,216,240,0.65)' }}>
-            {member.role}
           </p>
           <div className="flex flex-wrap gap-1">
             {member.tags.map((tag) => (
@@ -314,31 +270,6 @@ function DossierCard({ member, delay, revealed, glitch }) {
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Terminal expertise block */}
-      <div
-        className="rounded-lg p-3"
-        style={{
-          background: 'rgba(0,0,0,0.5)',
-          border: '1px solid rgba(0,212,255,0.07)',
-        }}
-      >
-        <p className="font-mono text-xs mb-2" style={{ color: 'rgba(0,212,255,0.45)', fontSize: '0.65rem' }}>
-          $ cat expertise.log
-        </p>
-        {member.expertise.map((line, j) => (
-          <motion.p
-            key={j}
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: delay + 0.4 + j * 0.07 }}
-            className="font-mono leading-relaxed"
-            style={{ color: 'rgba(46,213,115,0.85)', fontSize: '0.62rem' }}
-          >
-            {line}
-          </motion.p>
-        ))}
       </div>
 
       {/* Faint clearance watermark */}

@@ -59,6 +59,8 @@ export default function Navigation() {
         scrollTo(SECTIONS[SECTIONS.length - 1].id)
       } else if (e.key === 'Escape') {
         setShowDossier(false)
+      } else if (e.key === 'i' || e.key === 'I') {
+        setShowDossier(v => !v)
       }
     }
     window.addEventListener('keydown', onKey)
