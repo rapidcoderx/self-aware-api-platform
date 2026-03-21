@@ -10,10 +10,10 @@ const ACHIEVED = [
 
 export default function CallToAction() {
   return (
-    <section id="cta" className="relative min-h-screen z-10 py-24 px-6 md:px-12 lg:px-24 nebula-bg">
+    <section id="cta" className="relative z-10 flex flex-col justify-center pt-16 pb-2 px-6 md:px-12 lg:px-24 nebula-bg">
       <div className="max-w-7xl mx-auto">
         <SectionHeader title="What We Built" tag="// WHAT'S UNIQUE" subtitle="48 hours. A working agentic API intelligence system — not a prototype." />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 text-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6 text-center">
           {METRICS.map(({ target, label }) => (
             <div key={label} className="glass rounded-2xl p-8">
               <span className="font-display font-black text-6xl text-gradient-cyan glow-text-cyan tabular-nums">{target}</span>
@@ -21,7 +21,7 @@ export default function CallToAction() {
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
           {ACHIEVED.map(({ icon, label, desc }) => (
             <div key={label}
               className="glass-strong rounded-xl p-5 flex items-start gap-4 hover:border-accent-primary/30 transition-colors duration-200">

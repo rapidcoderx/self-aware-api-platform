@@ -5,6 +5,7 @@ import Hero from './components/sections/Hero'
 import Problem from './components/sections/Problem'
 import Solution from './components/sections/Solution'
 import Architecture from './components/sections/Architecture'
+import DataFlow from './components/sections/DataFlow'
 import MCPTools from './components/sections/MCPTools'
 import DemoFlow from './components/sections/DemoFlow'
 import TechStack from './components/sections/TechStack'
@@ -24,23 +25,15 @@ export default function App() {
       {/* All sections */}
       <main className="relative">
         <Hero />
-        <div className="section-divider" />
         <Problem />
-        <div className="section-divider" />
         <Solution />
-        <div className="section-divider" />
         <Architecture />
-        <div className="section-divider" />
+        <DataFlow />
         <MCPTools />
-        <div className="section-divider" />
         <DemoFlow />
-        <div className="section-divider" />
         <TechStack />
-        <div className="section-divider" />
         <ResponsibleAI />
-        <div className="section-divider" />
         <LiveDemo />
-        <div className="section-divider" />
         <CallToAction />
       </main>
 

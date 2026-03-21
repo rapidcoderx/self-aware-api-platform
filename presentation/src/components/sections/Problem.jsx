@@ -9,7 +9,7 @@ const PROBLEMS = [
 
 export default function Problem() {
   return (
-    <section id="problem" className="relative min-h-screen z-10 py-24 px-6 md:px-12 lg:px-24">
+    <section id="problem" className="relative z-10 flex flex-col justify-center pt-16 pb-2 px-6 md:px-12 lg:px-24">
       <div className="max-w-7xl mx-auto">
         <SectionHeader title="The Problem" tag="// CONTEXT" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

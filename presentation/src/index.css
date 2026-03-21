@@ -23,9 +23,12 @@
   }
 
   /* Render boundary per section — prevents cross-section repaints */
+  /* height:100vh + overflow:hidden = one slide per page */
   section {
     scroll-margin-top: 60px;
     contain: paint;   /* paint-only: no fixed-position side effects */
+    height: 100vh;
+    overflow: hidden;
   }
 
   /* Pause CSS animations while JS scroll is running — eliminates compositor

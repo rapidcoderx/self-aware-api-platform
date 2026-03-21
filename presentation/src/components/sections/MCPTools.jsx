@@ -13,7 +13,7 @@ const TOOLS = [
 export default function MCPTools() {
   const [expanded, setExpanded] = useState(null)
   return (
-    <section id="mcp-tools" className="relative min-h-screen z-10 py-24 px-6 md:px-12 lg:px-24">
+    <section id="mcp-tools" className="relative z-10 flex flex-col justify-center pt-16 pb-2 px-6 md:px-12 lg:px-24">
       <div className="max-w-7xl mx-auto">
         <SectionHeader title="MCP Tool Contract" tag="// TOOLING" subtitle="Five narrow, typed, auditable tools. The agent orchestrates. Tools execute." />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">

@@ -6,9 +6,10 @@ import TeamDossier from './TeamDossier'
 const SECTIONS = [
   { id: 'hero', label: 'Home' }, { id: 'problem', label: 'Problem' },
   { id: 'solution', label: 'Solution' }, { id: 'architecture', label: 'Architecture' },
-  { id: 'mcp-tools', label: 'MCP Tools' }, { id: 'demo-flow', label: 'Demo' },
-  { id: 'tech-stack', label: 'Tech Stack' }, { id: 'responsible-ai', label: 'Resp. AI' },
-  { id: 'live-demo', label: 'Live Demo' }, { id: 'cta', label: 'Why We Win' },
+  { id: 'data-flow', label: 'Data Flow' }, { id: 'mcp-tools', label: 'MCP Tools' },
+  { id: 'demo-flow', label: 'Demo' }, { id: 'tech-stack', label: 'Tech Stack' },
+  { id: 'responsible-ai', label: 'Resp. AI' }, { id: 'live-demo', label: 'Live Demo' },
+  { id: 'cta', label: 'Why We Win' },
 ]
 
 const scrollTo = (id) => scrollToSection(id)

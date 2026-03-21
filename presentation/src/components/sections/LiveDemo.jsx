@@ -5,7 +5,7 @@ import SectionHeader from '../ui/SectionHeader'
 export default function LiveDemo() {
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.2 })
   return (
-    <section id="live-demo" className="relative min-h-screen z-10 py-24 px-6 md:px-12 lg:px-24">
+    <section id="live-demo" className="relative z-10 flex flex-col justify-center pt-16 pb-2 px-6 md:px-12 lg:px-24">
       <div className="max-w-5xl mx-auto text-center" ref={ref}>
         <SectionHeader title="See It Live" tag="// DEMO" />
         <div className="glass-strong rounded-2xl overflow-hidden mb-8 text-left" style={{ boxShadow: '0 0 60px rgba(0,212,255,0.1)' }}>

@@ -2,7 +2,7 @@ import { scrollToSection } from '../../utils/scroll'
 
 export default function Hero() {
   return (
-    <section id="hero" className="relative min-h-screen flex items-center justify-center z-10 nebula-bg">
+    <section id="hero" className="relative flex items-center justify-center z-10 nebula-bg">
       <div className="max-w-5xl mx-auto px-6 text-center">
         <p className="font-mono text-accent-primary text-sm md:text-base tracking-widest mb-6">
           // HACKATHON 2026 · AGENTIC INFRASTRUCTURE
