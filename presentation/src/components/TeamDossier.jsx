@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useEffect, useState } from 'react'
 import { motion as m, AnimatePresence } from 'framer-motion'
 import satsPhoto from '../../pics/satsphoto.jpg'
