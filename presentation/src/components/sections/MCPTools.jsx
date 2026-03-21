@@ -38,9 +38,6 @@ export default function MCPTools() {
             </div>
           ))}
         </div>
-        <div className="glass rounded-2xl border-accent-primary/30 p-6 text-center" style={{ boxShadow: '0 0 30px rgba(0,212,255,0.08)' }}>
-          <p className="font-mono text-accent-primary text-sm">"Tools are narrow, typed, and auditable. The agent orchestrates. Tools execute."</p>
-        </div>
       </div>
     </section>
   )

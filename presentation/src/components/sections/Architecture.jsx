@@ -121,12 +121,12 @@ export default function Architecture() {
   }, [activeFlow, flow.steps.length])
 
   return (
-    <section id="architecture" className="relative min-h-screen z-10 py-24 px-6 md:px-12 lg:px-24">
+    <section id="architecture" className="relative min-h-screen z-10 pt-14 pb-16 px-6 md:px-12 lg:px-24">
       <div className="max-w-7xl mx-auto">
         <SectionHeader title="System Architecture" tag="// DESIGN" />
 
         {/* ── Layer stack overview ──────────────────────────────────── */}
-        <div className="space-y-3 mb-20">
+        <div className="space-y-3 mb-8">
           {LAYERS.map((layer) => (
             <div key={layer.label}
               className="glass rounded-2xl p-4 md:p-5 flex items-center gap-4 md:gap-6"
@@ -156,7 +156,7 @@ export default function Architecture() {
         </div>
 
         {/* ── MCP Tools grid ───────────────────────────────────────── */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-6">
           <p className="font-mono text-accent-primary text-sm tracking-widest uppercase mb-2">// MCP ENFORCEMENT LAYER</p>
           <h3 className="font-display font-bold text-2xl md:text-3xl text-star-white mb-1">5 Typed MCP Tools</h3>
           <p className="font-body text-star-blue text-sm">The agent NEVER hits the DB directly — every action goes through a typed, audited tool</p>
