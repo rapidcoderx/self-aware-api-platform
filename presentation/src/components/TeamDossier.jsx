@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as m, AnimatePresence } from 'framer-motion'
 import satsPhoto from '../../pics/satsphoto.jpg'
 import editedPhoto from '../../pics/edited-photo.png'
 
@@ -9,7 +9,7 @@ const TEAM = [
     name: 'Sathishkumar Krishnan',
     designation: 'Industry Principal',
     role: 'Finacle Technical Consultant',
-    clearance: 'LEVEL-5',
+    clearance: 'TOP SECRET',
     photo: satsPhoto,
     status: 'ACTIVE',
   },
@@ -18,7 +18,7 @@ const TEAM = [
     name: 'Vinotha Sathishkumar',
     designation: 'Senior Project Manager',
     role: 'Lead Java Developer',
-    clearance: 'LEVEL-5',
+    clearance: 'TOP SECRET',
     photo: editedPhoto,
     status: 'ACTIVE',
   },
@@ -28,10 +28,13 @@ export default function TeamDossier({ open, onClose }) {
   const [phase, setPhase] = useState('hidden') // hidden | classified | revealed
 
   useEffect(() => {
-    if (!open) { setPhase('hidden'); return }
-    setPhase('classified')
+    if (!open) {
+      const t0 = setTimeout(() => setPhase('hidden'), 0)
+      return () => clearTimeout(t0)
+    }
+    const t0 = setTimeout(() => setPhase('classified'), 0)
     const t1 = setTimeout(() => setPhase('revealed'), 3000)
-    return () => { clearTimeout(t1) }
+    return () => { clearTimeout(t0); clearTimeout(t1) }
   }, [open])
 
   useEffect(() => {
@@ -42,12 +45,11 @@ export default function TeamDossier({ open, onClose }) {
   }, [open, onClose])
 
   const revealed = phase === 'revealed'
-  const glitch = false
 
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           key="dossier-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -57,7 +59,7 @@ export default function TeamDossier({ open, onClose }) {
           style={{ background: 'rgba(2, 4, 9, 0.97)' }}
           onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
         >
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
@@ -125,7 +127,7 @@ export default function TeamDossier({ open, onClose }) {
             {/* Footer hint */}
             <AnimatePresence>
               {revealed && (
-                <motion.p
+                <m.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7 }}
@@ -133,11 +135,11 @@ export default function TeamDossier({ open, onClose }) {
                   style={{ color: 'rgba(0,212,255,0.3)' }}
                 >
                   Esc to close · arrow keys or clicker to navigate sections ✓
-                </motion.p>
+                </m.p>
               )}
             </AnimatePresence>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   )
@@ -147,7 +149,7 @@ function DossierCard({ member, delay, revealed }) {
   const [imgError, setImgError] = useState(false)
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.28, ease: 'easeOut' }}
@@ -272,6 +274,6 @@ function DossierCard({ member, delay, revealed }) {
           {member.clearance}
         </p>
       </div>
-    </motion.div>
+    </m.div>
   )
 }
