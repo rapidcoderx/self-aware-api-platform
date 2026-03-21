@@ -199,7 +199,7 @@ function DossierCard({ member, delay, revealed }) {
       </div>
 
       {/* Photo + identity */}
-      <div className="flex items-start gap-4 mb-4">
+      <div className="flex items-center gap-6 mb-4">
         {/* Avatar */}
         <div className="relative flex-shrink-0 w-36 h-36">
           <div
