@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { scrollToSection } from '../utils/scroll'
+import TeamDossier from './TeamDossier'
 
 const SECTIONS = [
   { id: 'hero', label: 'Home' }, { id: 'problem', label: 'Problem' },
@@ -14,7 +15,7 @@ const scrollTo = (id) => scrollToSection(id)
 
 export default function Navigation() {
   const [active, setActive] = useState('hero')
-  const [showInfo, setShowInfo] = useState(false)
+  const [showDossier, setShowDossier] = useState(false)
   const activeIndexRef = useRef(0)
 
   // Track active index in a ref so the keydown handler always has fresh value
@@ -57,7 +58,7 @@ export default function Navigation() {
         e.preventDefault()
         scrollTo(SECTIONS[SECTIONS.length - 1].id)
       } else if (e.key === 'Escape') {
-        setShowInfo(false)
+        setShowDossier(false)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -99,44 +100,26 @@ export default function Navigation() {
             {/* Divider */}
             <div className="w-px h-4 bg-accent-primary/20 mx-1" />
 
-            {/* Info button */}
+            {/* Team dossier trigger */}
             <button
-              onClick={() => setShowInfo(v => !v)}
-              title="Team info"
+              onClick={() => setShowDossier(true)}
+              title="Meet the team"
               className={`group relative w-6 h-6 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                showInfo
+                showDossier
                   ? 'border-accent-primary bg-accent-primary/20 text-accent-primary'
                   : 'border-star-blue/40 text-star-blue/60 hover:border-accent-primary hover:text-accent-primary'
               }`}
             >
               <span className="font-mono text-xs font-bold leading-none">i</span>
+              <span className="absolute top-8 right-0 font-mono text-xs text-accent-primary whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                Meet the team
+              </span>
             </button>
           </div>
         </div>
       </motion.nav>
 
-      {/* Team info popover */}
-      <AnimatePresence>
-        {showInfo && (
-          <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="fixed top-14 right-6 z-50 glass-strong rounded-2xl p-5 border-accent-primary/30"
-            style={{ boxShadow: '0 0 40px rgba(0,212,255,0.15)', minWidth: 280 }}
-          >
-            <p className="font-mono text-accent-primary text-xs tracking-widest mb-3 uppercase">// TEAM</p>
-            <p className="font-display font-bold text-star-white text-base mb-1">The Autonomous Duo</p>
-            <p className="font-body text-star-blue text-sm">Sathishkumar Krishnan</p>
-            <p className="font-body text-star-blue text-sm">Vinotha Sathishkumar</p>
-            <div className="mt-3 pt-3 border-t border-accent-primary/15">
-              <p className="font-mono text-accent-primary/50 text-xs">← → or PageDown/PageUp to navigate</p>
-              <p className="font-mono text-accent-primary/30 text-xs mt-1">Clicker remote supported ✓</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <TeamDossier open={showDossier} onClose={() => setShowDossier(false)} />
     </>
   )
 }
