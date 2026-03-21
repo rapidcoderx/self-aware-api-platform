@@ -18,19 +18,35 @@ export default function Navigation() {
   const [active, setActive] = useState('hero')
   const [showDossier, setShowDossier] = useState(false)
   const activeIndexRef = useRef(0)
+  const cooldownRef = useRef(false)
 
-  // Track active index in a ref so the keydown handler always has fresh value
-  useEffect(() => {
-    activeIndexRef.current = SECTIONS.findIndex(s => s.id === active)
-  }, [active])
+  // navigate: eagerly update ref + state + scroll, then lock for 500ms
+  const navigate = (targetIndex) => {
+    if (cooldownRef.current) return
+    const idx = Math.max(0, Math.min(targetIndex, SECTIONS.length - 1))
+    activeIndexRef.current = idx
+    setActive(SECTIONS[idx].id)
+    scrollTo(SECTIONS[idx].id)
+    cooldownRef.current = true
+    setTimeout(() => { cooldownRef.current = false }, 500)
+  }
 
-  // IntersectionObserver to track active section
+  // IntersectionObserver syncs active dot when user manually scrolls
   useEffect(() => {
     const obs = []
     SECTIONS.forEach(({ id }) => {
       const el = document.getElementById(id)
       if (!el) return
-      const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) setActive(id) }, { rootMargin: '-5% 0px -80% 0px', threshold: 0 })
+      const o = new IntersectionObserver(
+        ([e]) => {
+          if (e.isIntersecting && !cooldownRef.current) {
+            const idx = SECTIONS.findIndex(s => s.id === id)
+            activeIndexRef.current = idx
+            setActive(id)
+          }
+        },
+        { rootMargin: '-5% 0px -80% 0px', threshold: 0 }
+      )
       o.observe(el); obs.push(o)
     })
     return () => obs.forEach(o => o.disconnect())
@@ -38,7 +54,6 @@ export default function Navigation() {
 
   // Arrow key + presentation clicker navigation
   // Clicker remotes (Logitech R400/R800/Spotlight): PageDown = next, PageUp = prev
-  // Some clickers also send Space (next) or B/Period (black screen — ignored)
   useEffect(() => {
     const onKey = (e) => {
       const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)
@@ -46,18 +61,16 @@ export default function Navigation() {
 
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
         e.preventDefault()
-        const next = Math.min(activeIndexRef.current + 1, SECTIONS.length - 1)
-        scrollTo(SECTIONS[next].id)
+        navigate(activeIndexRef.current + 1)
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
         e.preventDefault()
-        const prev = Math.max(activeIndexRef.current - 1, 0)
-        scrollTo(SECTIONS[prev].id)
+        navigate(activeIndexRef.current - 1)
       } else if (e.key === 'Home') {
         e.preventDefault()
-        scrollTo(SECTIONS[0].id)
+        navigate(0)
       } else if (e.key === 'End') {
         e.preventDefault()
-        scrollTo(SECTIONS[SECTIONS.length - 1].id)
+        navigate(SECTIONS.length - 1)
       } else if (e.key === 'Escape') {
         setShowDossier(false)
       } else if (e.key === 'i' || e.key === 'I') {
@@ -76,7 +89,7 @@ export default function Navigation() {
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           {/* Logo — click goes to Hero */}
           <button
-            onClick={() => scrollTo('hero')}
+            onClick={() => navigate(0)}
             className="flex items-center gap-3 group"
             title="Back to Home"
           >
@@ -93,8 +106,8 @@ export default function Navigation() {
 
           {/* Section dots + info button */}
           <div className="flex items-center gap-2">
-            {SECTIONS.map(({ id, label }) => (
-              <button key={id} onClick={() => scrollTo(id)} title={label} className="group relative p-1">
+            {SECTIONS.map(({ id, label }, idx) => (
+              <button key={id} onClick={() => navigate(idx)} title={label} className="group relative p-1">
                 <div className={`w-2 h-2 rounded-full transition-all duration-300 ${active === id ? 'bg-accent-primary shadow-glow-cyan scale-125' : 'bg-star-blue/30 hover:bg-star-blue/70'}`} />
                 <span className="absolute top-6 left-1/2 -translate-x-1/2 font-mono text-xs text-accent-primary whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">{label}</span>
               </button>
