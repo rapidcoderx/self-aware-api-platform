@@ -33,7 +33,7 @@ export default function TeamDossier({ open, onClose }) {
       return () => clearTimeout(t0)
     }
     const t0 = setTimeout(() => setPhase('classified'), 0)
-    const t1 = setTimeout(() => setPhase('revealed'), 3000)
+    const t1 = setTimeout(() => setPhase('revealed'), 1000)
     return () => { clearTimeout(t0); clearTimeout(t1) }
   }, [open])
 
