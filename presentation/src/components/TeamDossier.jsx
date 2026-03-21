@@ -7,7 +7,8 @@ const TEAM = [
   {
     codename: 'ARCHITECT-01',
     name: 'Sathishkumar Krishnan',
-    designation: 'Finacle Technical Consultant',
+    designation: 'Industry Principal',
+    role: 'Finacle Technical Consultant',
     clearance: 'LEVEL-5',
     photo: satsPhoto,
     status: 'ACTIVE',
@@ -16,7 +17,8 @@ const TEAM = [
   {
     codename: 'ARCHITECT-02',
     name: 'Vinotha Sathishkumar',
-    designation: 'Senior Java Developer',
+    designation: 'Senior Project Manager',
+    role: 'Lead Java Developer',
     clearance: 'LEVEL-5',
     photo: editedPhoto,
     status: 'ACTIVE',
@@ -260,7 +262,7 @@ function DossierCard({ member, delay, revealed }) {
               transition: 'color 0.5s ease',
             }}
           >
-            {revealed ? member.designation : '████████████████'}
+            {revealed ? member.role : '████████████████'}
           </p>
           <div className="flex flex-wrap gap-1">
             {member.tags.map((tag) => (
