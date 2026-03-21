@@ -9,50 +9,6 @@ const LAYERS = [
   { label: 'INTERFACE', color: '#2ed573', items: [{ name: 'Claude Agent (tool_use)' }, { name: 'React UI' }] },
 ]
 
-/* ── MCP tool definitions ─────────────────────────────────────────────────── */
-const MCP_TOOLS = [
-  {
-    name: 'search_endpoints',
-    sig: 'search_endpoints(query, spec_id, limit=5)',
-    desc: 'Embeds query with Voyage AI → cosine search pgvector → returns top-N endpoint summaries',
-    color: '#00d4ff',
-    icon: '🔍',
-    returns: 'list[EndpointSummary]',
-  },
-  {
-    name: 'get_endpoint',
-    sig: 'get_endpoint(operation_id, spec_id)',
-    desc: 'Fetches full schema_json for one operation — parameters, requestBody, response schemas',
-    color: '#7c3aed',
-    icon: '📋',
-    returns: 'EndpointDetail',
-  },
-  {
-    name: 'validate_request',
-    sig: 'validate_request(operation_id, payload, spec_id)',
-    desc: 'Extracts requestBody JSON Schema → runs jsonschema.validate() → returns field-level errors',
-    color: '#2ed573',
-    icon: '✅',
-    returns: 'ValidationResult',
-  },
-  {
-    name: 'diff_specs',
-    sig: 'diff_specs(old_spec_id, new_spec_id)',
-    desc: 'Compares requestBody schemas between two spec versions → classifies BREAKING vs NON_BREAKING',
-    color: '#ff4757',
-    icon: '🔀',
-    returns: 'list[DiffItem]',
-  },
-  {
-    name: 'analyze_impact',
-    sig: 'analyze_impact(diff_id)',
-    desc: 'Loads dependencies.yaml → maps breaking changes to affected services, teams, and severity',
-    color: '#ffd700',
-    icon: '💥',
-    returns: 'list[ImpactItem]',
-  },
-]
-
 /* ── Flow definitions (from project-flow.mmd) ────────────────────────────── */
 const FLOWS = [
   {
@@ -105,7 +61,6 @@ const FLOWS = [
 export default function Architecture() {
   const [activeFlow, setActiveFlow] = useState('query')
   const [activeStep, setActiveStep] = useState(-1)
-  const [activeTool, setActiveTool] = useState(null)
 
   const flow = FLOWS.find(f => f.id === activeFlow)
 
@@ -155,40 +110,6 @@ export default function Architecture() {
           ))}
         </div>
 
-        {/* ── MCP Tools grid ───────────────────────────────────────── */}
-        <div className="text-center mb-6">
-          <p className="font-mono text-accent-primary text-sm tracking-widest uppercase mb-2">// MCP ENFORCEMENT LAYER</p>
-          <h3 className="font-display font-bold text-2xl md:text-3xl text-star-white mb-1">5 Typed MCP Tools</h3>
-          <p className="font-body text-star-blue text-sm">The agent NEVER hits the DB directly — every action goes through a typed, audited tool</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-24">
-          {MCP_TOOLS.map(tool => (
-            <button
-              key={tool.name}
-              onClick={() => setActiveTool(activeTool === tool.name ? null : tool.name)}
-              className="glass rounded-2xl p-5 text-left transition-all duration-200 hover:scale-[1.02]"
-              style={{
-                borderLeft: `3px solid ${tool.color}`,
-                boxShadow: activeTool === tool.name ? `0 0 28px ${tool.color}44` : undefined,
-              }}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xl">{tool.icon}</span>
-                <span className="font-mono text-xs font-semibold" style={{ color: tool.color }}>{tool.name}</span>
-              </div>
-              <p className="font-mono text-[11px] text-accent-primary/70 mb-2 truncate">{tool.sig}</p>
-              <p className="font-body text-xs text-star-blue leading-relaxed">{tool.desc}</p>
-              {activeTool === tool.name && (
-                <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2">
-                  <span className="font-mono text-[10px] text-star-blue">returns</span>
-                  <span className="font-mono text-[10px] px-2 py-0.5 rounded-md" style={{ background: tool.color + '22', color: tool.color }}>{tool.returns}</span>
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-
         {/* ── Flow diagram ─────────────────────────────────────────── */}
         <div className="text-center mb-10">
           <p className="font-mono text-accent-primary text-sm tracking-widest uppercase mb-2">// DATA FLOWS</p>
@@ -215,10 +136,11 @@ export default function Architecture() {
           ))}
         </div>
 
-        <p className="text-center font-body text-star-blue text-sm mb-10">{flow.description}</p>
+        <p className="text-center font-body text-star-blue text-sm mb-6">{flow.description}</p>
 
-        {/* Step nodes + connecting arrows */}
-        <div className="max-w-lg mx-auto">
+        {/* Step nodes + connecting arrows — two-column on md+ to cut vertical height */}
+        <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {flow.steps.map((step, idx) => {
             const lit = activeStep >= idx
             return (
@@ -272,7 +194,8 @@ export default function Architecture() {
             )
           })}
 
-          <div className="flex justify-center mt-8">
+        </div>
+          <div className="flex justify-center mt-6">
             <button
               onClick={() => setActiveFlow(activeFlow)}
               className="glass font-mono text-xs text-star-blue px-4 py-2 rounded-xl border border-accent-primary/20 hover:text-accent-primary hover:border-accent-primary/50 transition-colors duration-200"

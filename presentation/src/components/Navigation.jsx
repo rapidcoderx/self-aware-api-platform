@@ -29,7 +29,7 @@ export default function Navigation() {
     SECTIONS.forEach(({ id }) => {
       const el = document.getElementById(id)
       if (!el) return
-      const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) setActive(id) }, { threshold: 0.4 })
+      const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) setActive(id) }, { rootMargin: '-5% 0px -80% 0px', threshold: 0 })
       o.observe(el); obs.push(o)
     })
     return () => obs.forEach(o => o.disconnect())
