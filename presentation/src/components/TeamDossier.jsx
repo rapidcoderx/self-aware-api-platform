@@ -30,7 +30,7 @@ export default function TeamDossier({ open, onClose }) {
   useEffect(() => {
     if (!open) { setPhase('hidden'); return }
     setPhase('classified')
-    const t1 = setTimeout(() => setPhase('revealed'), 700)
+    const t1 = setTimeout(() => setPhase('revealed'), 3000)
     return () => { clearTimeout(t1) }
   }, [open])
 
