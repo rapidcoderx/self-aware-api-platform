@@ -23,6 +23,16 @@ const TEAM = [
     photo: editedPhoto,
     status: 'ACTIVE',
   },
+  {
+    codename: 'COPILOT-AI',
+    name: 'Claude + GitHub Copilot',
+    designation: 'AI Coding Co-Pilot',
+    role: 'Claude Sonnet 4 · VS Code Copilot',
+    clearance: 'UNRESTRICTED',
+    photo: null,
+    status: 'ONLINE',
+    isAI: true,
+  },
 ]
 
 export default function TeamDossier({ open, onClose }) {
@@ -102,7 +112,7 @@ export default function TeamDossier({ open, onClose }) {
                   backgroundClip: 'text',
                 }}
               >
-                {revealed ? 'THE AUTONOMOUS DUO' : '████ ██████████ ███'}
+                {revealed ? 'THE AUTONOMOUS TRIO' : '████ ██████████ ████'}
               </h2>
 
               <div
@@ -114,7 +124,7 @@ export default function TeamDossier({ open, onClose }) {
             </div>
 
             {/* Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {TEAM.map((member, i) => (
                 <DossierCard
                   key={member.codename}
@@ -190,9 +200,9 @@ function DossierCard({ member, delay, revealed }) {
         <span
           className="font-mono text-xs px-2 py-0.5 rounded"
           style={{
-            background: 'rgba(46,213,115,0.08)',
-            color: '#2ed573',
-            border: '1px solid rgba(46,213,115,0.2)',
+            background: member.isAI ? 'rgba(124,58,237,0.12)' : 'rgba(46,213,115,0.08)',
+            color: member.isAI ? '#a78bfa' : '#2ed573',
+            border: member.isAI ? '1px solid rgba(124,58,237,0.35)' : '1px solid rgba(46,213,115,0.2)',
           }}
         >
           ● {member.status}
@@ -207,12 +217,34 @@ function DossierCard({ member, delay, revealed }) {
             className="w-36 h-36 rounded-full overflow-hidden"
             style={{
               boxShadow: revealed
-                ? '0 0 0 2px rgba(0,212,255,0.7), 0 0 16px rgba(0,212,255,0.25)'
+                ? member.isAI
+                  ? '0 0 0 2px rgba(124,58,237,0.9), 0 0 24px rgba(124,58,237,0.4)'
+                  : '0 0 0 2px rgba(0,212,255,0.7), 0 0 16px rgba(0,212,255,0.25)'
                 : '0 0 0 2px rgba(0,212,255,0.2)',
               transition: 'box-shadow 0.5s ease',
             }}
           >
-            {!imgError ? (
+            {member.isAI ? (
+              <div
+                className="w-full h-full flex flex-col items-center justify-center gap-1"
+                style={{
+                  background: revealed
+                    ? 'linear-gradient(135deg, #0f0a2e 0%, #1e1b4b 50%, #0a0a1a 100%)'
+                    : 'rgba(10,10,26,0.8)',
+                  transition: 'background 0.5s ease',
+                }}
+              >
+                <span style={{ fontSize: '2.5rem', filter: revealed ? 'none' : 'grayscale(1) brightness(0.2)', transition: 'filter 0.5s ease' }}>🤖</span>
+                {revealed && (
+                  <span
+                    className="font-mono text-center leading-tight"
+                    style={{ fontSize: '0.45rem', color: 'rgba(167,139,250,0.7)', letterSpacing: '0.05em' }}
+                  >
+                    ANTHROPIC<br/>× GITHUB
+                  </span>
+                )}
+              </div>
+            ) : !imgError ? (
               <img
                 src={member.photo}
                 alt={member.name}
@@ -250,7 +282,9 @@ function DossierCard({ member, delay, revealed }) {
           <p
             className="font-mono text-sm mb-1"
             style={{
-              color: revealed ? '#ffd700' : 'rgba(255,215,0,0.1)',
+              color: revealed
+                ? member.isAI ? '#a78bfa' : '#ffd700'
+                : 'rgba(255,215,0,0.1)',
               transition: 'color 0.5s ease',
             }}
           >
@@ -271,7 +305,7 @@ function DossierCard({ member, delay, revealed }) {
 
       {/* Faint clearance watermark */}
       <div className="absolute bottom-3 right-3 pointer-events-none select-none opacity-[0.07] rotate-[-15deg]">
-        <p className="font-display font-black text-2xl tracking-widest" style={{ color: '#00d4ff' }}>
+        <p className="font-display font-black text-2xl tracking-widest" style={{ color: member.isAI ? '#a78bfa' : '#00d4ff' }}>
           {member.clearance}
         </p>
       </div>

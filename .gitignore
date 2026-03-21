@@ -32,3 +32,6 @@ deploy/pids/
 
 # DB
 *.sql.bak
+
+# Final presentation artifacts — local only, never commit
+final/
