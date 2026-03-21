@@ -12,7 +12,6 @@ const TEAM = [
     clearance: 'LEVEL-5',
     photo: satsPhoto,
     status: 'ACTIVE',
-    tags: ['Backend', 'Agent Loop', 'Vector DB'],
   },
   {
     codename: 'ARCHITECT-02',
@@ -22,7 +21,6 @@ const TEAM = [
     clearance: 'LEVEL-5',
     photo: editedPhoto,
     status: 'ACTIVE',
-    tags: ['Frontend', 'UX/UI', 'React'],
   },
 ]
 
@@ -64,7 +62,7 @@ export default function TeamDossier({ open, onClose }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="relative z-10 w-full max-w-4xl"
+            className="relative z-10 w-full max-w-5xl"
           >
             {/* Close button */}
             <button
@@ -153,7 +151,7 @@ function DossierCard({ member, delay, revealed }) {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.28, ease: 'easeOut' }}
-      className="rounded-2xl p-7 relative overflow-hidden"
+      className="rounded-2xl p-9 relative overflow-hidden"
       style={{
         background: 'rgba(10, 20, 40, 0.97)',
         border: '1px solid rgba(0,212,255,0.2)',
@@ -201,9 +199,9 @@ function DossierCard({ member, delay, revealed }) {
       {/* Photo + identity */}
       <div className="flex items-start gap-4 mb-4">
         {/* Avatar */}
-        <div className="relative flex-shrink-0 w-28 h-28">
+        <div className="relative flex-shrink-0 w-36 h-36">
           <div
-            className="w-28 h-28 rounded-full overflow-hidden"
+            className="w-36 h-36 rounded-full overflow-hidden"
             style={{
               boxShadow: revealed
                 ? '0 0 0 2px rgba(0,212,255,0.7), 0 0 16px rgba(0,212,255,0.25)'
@@ -238,7 +236,7 @@ function DossierCard({ member, delay, revealed }) {
         {/* Name + designation + tags */}
         <div className="flex-1 min-w-0">
           <p
-            className="font-display font-bold text-base leading-snug mb-0.5"
+            className="font-display font-bold text-xl leading-snug mb-1"
             style={{
               color: revealed ? '#f8faff' : 'rgba(248,250,255,0.15)',
               transition: 'color 0.5s ease',
@@ -247,7 +245,7 @@ function DossierCard({ member, delay, revealed }) {
             {revealed ? member.name : '████████████████'}
           </p>
           <p
-            className="font-mono text-xs mb-1"
+            className="font-mono text-sm mb-1"
             style={{
               color: revealed ? '#ffd700' : 'rgba(255,215,0,0.1)',
               transition: 'color 0.5s ease',
@@ -256,7 +254,7 @@ function DossierCard({ member, delay, revealed }) {
             {revealed ? `// ${member.designation}` : '// ████████████████'}
           </p>
           <p
-            className="font-body text-sm font-semibold mb-3"
+            className="font-body text-base font-semibold mb-3"
             style={{
               color: revealed ? 'rgba(168,216,240,0.9)' : 'rgba(168,216,240,0.07)',
               transition: 'color 0.5s ease',
@@ -264,22 +262,7 @@ function DossierCard({ member, delay, revealed }) {
           >
             {revealed ? member.role : '████████████████'}
           </p>
-          <div className="flex flex-wrap gap-1">
-            {member.tags.map((tag) => (
-              <span
-                key={tag}
-                className="font-mono px-1.5 py-0.5 rounded"
-                style={{
-                  background: 'rgba(124,58,237,0.12)',
-                  color: '#7c3aed',
-                  border: '1px solid rgba(124,58,237,0.2)',
-                  fontSize: '0.6rem',
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+
         </div>
       </div>
 
