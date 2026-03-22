@@ -66,7 +66,7 @@ export default function TeamDossier({ open, onClose }) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center px-8 py-4"
           style={{ background: 'rgba(2, 4, 9, 0.97)' }}
           onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
         >
@@ -75,7 +75,7 @@ export default function TeamDossier({ open, onClose }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="relative z-10 w-full max-w-5xl"
+            className="relative z-10 w-full max-w-6xl"
           >
             {/* Close button */}
             <button
@@ -112,7 +112,7 @@ export default function TeamDossier({ open, onClose }) {
                   backgroundClip: 'text',
                 }}
               >
-                {revealed ? 'THE AUTONOMOUS TRIO' : '████ ██████████ ████'}
+                {revealed ? 'THE AUTONOMOUS DUO' : '████ ██████████ ████'}
               </h2>
 
               <div
@@ -164,7 +164,7 @@ function DossierCard({ member, delay, revealed }) {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.28, ease: 'easeOut' }}
-      className="rounded-2xl p-9 relative overflow-hidden"
+      className="rounded-2xl p-6 relative overflow-hidden"
       style={{
         background: 'rgba(10, 20, 40, 0.97)',
         border: '1px solid rgba(0,212,255,0.2)',
@@ -210,7 +210,7 @@ function DossierCard({ member, delay, revealed }) {
       </div>
 
       {/* Photo + identity */}
-      <div className="flex items-center gap-6 mb-4">
+      <div className="flex items-center gap-4 mb-4">
         {/* Avatar */}
         <div className="relative flex-shrink-0 w-36 h-36">
           <div
