@@ -114,7 +114,7 @@ export default function TeamDossier({ open, onClose }) {
             </div>
 
             {/* Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl mx-auto w-full">
               {TEAM.map((member, i) => (
                 <DossierCard
                   key={member.codename}
