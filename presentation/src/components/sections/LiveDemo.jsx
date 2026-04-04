@@ -34,10 +34,16 @@ export default function LiveDemo() {
         <p className="font-mono text-star-blue/70 text-sm mb-8">
           Upload v2 → Breaking change detected → Migration plan generated
         </p>
-        <a href="https://github.com/rapidcoderx/self-aware-api-platform" target="_blank" rel="noopener noreferrer"
-          className="inline-block font-mono text-star-white border border-star-white/30 rounded-xl px-8 py-3 text-sm tracking-wider hover:border-star-white/70 hover:bg-star-white/5 transition-colors duration-200">
-          View on GitHub →
-        </a>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="https://www.loom.com/share/4b05290c1cff4212a0cb85ca09a69a14" target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 font-mono bg-accent-primary/10 text-accent-primary border border-accent-primary/40 rounded-xl px-8 py-3 text-sm tracking-wider hover:bg-accent-primary/20 hover:border-accent-primary/70 transition-colors duration-200">
+            <span>▶</span> Watch Live Presentation
+          </a>
+          <a href="https://github.com/rapidcoderx/self-aware-api-platform" target="_blank" rel="noopener noreferrer"
+            className="inline-block font-mono text-star-white border border-star-white/30 rounded-xl px-8 py-3 text-sm tracking-wider hover:border-star-white/70 hover:bg-star-white/5 transition-colors duration-200">
+            View on GitHub →
+          </a>
+        </div>
       </div>
     </section>
   )

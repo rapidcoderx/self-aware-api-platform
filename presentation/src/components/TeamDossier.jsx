@@ -23,16 +23,6 @@ const TEAM = [
     photo: editedPhoto,
     status: 'ACTIVE',
   },
-  {
-    codename: 'COPILOT-AI',
-    name: 'Claude + GitHub Copilot',
-    designation: 'AI Coding Co-Pilot',
-    role: 'Claude Sonnet 4 · VS Code Copilot',
-    clearance: 'UNRESTRICTED',
-    photo: null,
-    status: 'ONLINE',
-    isAI: true,
-  },
 ]
 
 export default function TeamDossier({ open, onClose }) {
